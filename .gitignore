@@ -1,0 +1,5 @@
+# En el .gitignore de tp-dev-env
+.env
+/bgg-shop-core
+/bgg-shop-bff
+/bgg-shopfrontend
