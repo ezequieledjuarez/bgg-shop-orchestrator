@@ -1,0 +1,150 @@
+version: '3.8'
+
+# Ancla de YAML con variables para Saleor y Flask
+x-saleor-environment: &saleor-environment
+  SECRET_KEY: ${SECRET_KEY:-super-secret-key}
+  DATABASE_URL: ${DATABASE_URL:-postgresql://saleor:saleor_pass@db:5432/saleor}
+  CELERY_BROKER_URL: "redis://redis:6379/1"
+  REDIS_URL: "redis://redis:6379/0"
+  ALLOWED_HOSTS: "localhost,127.0.0.1,api,bff,frontend"
+  CORS_ALLOWED_ORIGINS: "http://localhost:3000,http://127.0.0.1:3000,http://localhost:5000"
+  DEBUG: "True"
+  EMAIL_URL: "smtp://mailpit:1025"
+  DEFAULT_FROM_EMAIL: "noreply@saleor.local"
+  MEDIA_ROOT: "/app/media"
+
+services:
+  # 1. Base de Datos Transaccional (OLTP - PostgreSQL 15)
+  db:
+    image: docker.io/library/postgres:15-alpine
+    container_name: ${CONTAINER_NAME:-saleor_db}
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-saleor}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-saleor_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-saleor}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-saleor} -d ${POSTGRES_DB:-saleor}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 2. In-Memory Data Store (Broker & Cache)
+  redis:
+    image: docker.io/library/redis:7-alpine
+    container_name: saleor_redis
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 3. Servidor SMTP de desarrollo
+  mailpit:
+    image: docker.io/axllent/mailpit
+    container_name: saleor_mailpit
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    restart: unless-stopped
+
+  # 4. Backend Saleor API (Django GraphQL Engine - Interno)
+  api:
+    build:
+      context: ./bgg-shop-core
+      dockerfile: Dockerfile
+    container_name: saleor_api
+    command: python manage.py runserver 0.0.0.0:8000
+    environment:
+      <<: *saleor-environment
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./bgg-shop-core:/app:z
+      - saleor_media:/app/media:z
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # 5. 🟢 Microservicio Flask (BFF / Proxy REST / RBAC)
+  bff:
+    build:
+      context: ./bgg-shop-bff
+      dockerfile: Dockerfile
+    container_name: saleor_bff
+    environment:
+      PORT: "5000"
+      FLASK_ENV: "development"
+      SECRET_KEY: ${SECRET_KEY:-secret-key}
+      # Comunicación interna entre contenedores por DNS de Podman
+      SALEOR_GRAPHQL_URL: "http://api:8000/graphql/"
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./bgg-shop-bff:/app:z
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  # 6. Worker Asíncrono + Scheduler (Celery)
+  celery:
+    build:
+      context: ./bgg-shop-core
+      dockerfile: Dockerfile
+    container_name: saleor_celery
+    command: python -m celery -A saleor worker --beat --loglevel=info
+    environment:
+      <<: *saleor-environment
+    volumes:
+      - ./bgg-shop-core:/app:z
+      - saleor_media:/app/media:z
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # 7. Frontend Storefront (React / Vite)
+  frontend:
+    build:
+      context: ./bgg-shop-frontend
+      dockerfile: Dockerfile
+    container_name: saleor_frontend
+    environment:
+      # React consume ÚNICAMENTE la API REST expuesta por Flask
+      VITE_API_BASE_URL: "http://localhost:5000/api/v1"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./bgg-shop-frontend:/app:z
+      - frontend_node_modules:/app/node_modules
+    depends_on:
+      - bff
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  saleor_media:
+    driver: local
+  frontend_node_modules:
+    driver: local
+
+networks:
+  default:
+    name: saleor_network

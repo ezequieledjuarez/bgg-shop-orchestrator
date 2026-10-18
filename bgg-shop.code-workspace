@@ -1,0 +1,23 @@
+{
+  "folders": [
+    {
+      "name": "0. Orchestrator",
+      "path": "."
+    },
+    {
+      "name": "1. Core (Python - Saleor)",
+      "path": "./bgg-shop-core"
+    },
+    {
+      "name": "2. BFF (Python - FastAPI)",
+      "path": "./bgg-shop-bff"
+    },
+    {
+      "name": "3. Frontend (React)",
+      "path": "./bgg-shop-frontend"
+    }
+  ],
+  "settings": {
+    "github.copilot.chat.codeGeneration.useInstructionFiles": true
+  }
+}
