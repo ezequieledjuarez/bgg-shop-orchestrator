@@ -9,7 +9,7 @@
       "path": "./bgg-shop-core"
     },
     {
-      "name": "2. BFF (Python - FastAPI)",
+      "name": "2. BFF (Python - Flask)",
       "path": "./bgg-shop-bff"
     },
     {
