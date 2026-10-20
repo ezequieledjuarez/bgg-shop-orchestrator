@@ -131,3 +131,16 @@ the user; no additional schema change was required for this correction.
 
 The Frontend authentication tests, full test suite, lint, and production build
 were rerun after the translation.
+
+## Error messages and success feedback
+
+The Frontend maps authentication and review error codes to Spanish messages in
+`bgg-shop-frontend/src/ui/messages.ts`. Raw Core/BFF messages and internal
+details are not shown to users.
+
+Field and form errors remain inline with `role="alert"` so they stay associated
+with the action that needs correction and remain available to assistive
+technology. A dismissible five-second toast is used only for the successful
+review-submission confirmation; the persistent pending-moderation status
+remains visible in the form. Critical errors are not communicated exclusively
+through popups.
