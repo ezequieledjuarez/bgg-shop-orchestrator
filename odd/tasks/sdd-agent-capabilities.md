@@ -73,4 +73,5 @@ Existing agent guidance contains stale framework/spec references, nonstandard ex
 - Post-correction parent verification: all four `git diff --check` commands exited 0; the corrected route, Compose evidence, and documentation-agent filename were read back; no `src/app.py` or former documentation-agent path references remain in workspace customizations.
 - No functional service tests were run because these edits change agent guidance only; service pytest runners were also unavailable in the local service environments.
 - Engram full-task mirror remains pending/unverified because the memory write capability was unavailable in this runtime.
-- Next: complete the authorized work-unit commits using only the changed agent/instruction/task paths, then record commit IDs here.
+- Work-unit commits: BFF `bc38ce501f964d8e5fe200e1e897885e8b23e08b`; Core `08b2105570eb19416d961fd66266884f3bc8d3d1`; Frontend `7e57f3b0ad45536cb1d7263030270213a28f4b27`; root `9a1d3cfee18264991f8a192140cf5a9196dc27b7`.
+- Next: no implementation work remains; verify the task-record commit and preserve unrelated untracked files.
