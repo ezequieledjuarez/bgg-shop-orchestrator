@@ -159,3 +159,63 @@ CREATE TABLE IF NOT EXISTS shopping_cart_line (
         REFERENCES product_boardgame (bgg_id)
         ON DELETE CASCADE
 );
+
+
+-- ===============================================================================
+-- 5. DDL: Purchase orders, immutable line snapshots, and invoices
+-- ===============================================================================
+
+CREATE SEQUENCE IF NOT EXISTS purchase_invoice_number_seq;
+
+CREATE TABLE IF NOT EXISTS purchase_order (
+    id UUID PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    status VARCHAR(32) NOT NULL DEFAULT 'pending_payment',
+    total NUMERIC(12, 2) NOT NULL CHECK (total >= 0),
+    currency VARCHAR(3) NOT NULL,
+    shipping_mode VARCHAR(16) NOT NULL,
+    recipient VARCHAR(250),
+    street VARCHAR(500),
+    city VARCHAR(150),
+    postal_code VARCHAR(32),
+    phone VARCHAR(50),
+    mp_preference_id VARCHAR(128),
+    mp_payment_id VARCHAR(128),
+    payment_status VARCHAR(32),
+    payment_status_detail VARCHAR(255),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    paid_at TIMESTAMPTZ,
+    CONSTRAINT fk_purchase_order_user FOREIGN KEY (user_id)
+        REFERENCES auth_user (id) ON DELETE RESTRICT,
+    CONSTRAINT chk_purchase_order_status CHECK
+        (status IN ('pending_payment', 'paid', 'rejected', 'cancelled', 'paid_stock_conflict')),
+    CONSTRAINT chk_purchase_order_shipping_mode CHECK
+        (shipping_mode IN ('standard', 'pickup'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_purchase_order_user_created
+    ON purchase_order (user_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS purchase_order_line (
+    order_id UUID NOT NULL,
+    bgg_id INTEGER NOT NULL,
+    name VARCHAR(250) NOT NULL,
+    unit_price NUMERIC(12, 2) NOT NULL CHECK (unit_price >= 0),
+    quantity INTEGER NOT NULL CHECK (quantity > 0),
+    subtotal NUMERIC(12, 2) NOT NULL CHECK (subtotal >= 0),
+    CONSTRAINT pk_purchase_order_line PRIMARY KEY (order_id, bgg_id),
+    CONSTRAINT fk_purchase_order_line_order FOREIGN KEY (order_id)
+        REFERENCES purchase_order (id) ON DELETE CASCADE,
+    CONSTRAINT fk_purchase_order_line_product FOREIGN KEY (bgg_id)
+        REFERENCES product_boardgame (bgg_id) ON DELETE RESTRICT
+);
+
+CREATE TABLE IF NOT EXISTS invoice (
+    order_id UUID NOT NULL UNIQUE,
+    number BIGINT NOT NULL DEFAULT nextval('purchase_invoice_number_seq'),
+    issued_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    total NUMERIC(12, 2) NOT NULL CHECK (total >= 0),
+    CONSTRAINT pk_invoice PRIMARY KEY (order_id),
+    CONSTRAINT fk_invoice_order FOREIGN KEY (order_id)
+        REFERENCES purchase_order (id) ON DELETE CASCADE
+);
