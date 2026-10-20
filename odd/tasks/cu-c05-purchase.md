@@ -65,8 +65,10 @@ Independent reviews (high risk): Core found three issues, all fixed with tests: 
 
 Final suites: Core 50 passed; BFF 66 passed; Frontend 43 passed, build OK, lint 1 pre-existing warning. Commits on `CU-05` (not pushed or merged): Core `7fe630f`, BFF `375d5cf`, Frontend `fe4ae1e`, orchestrator `42da91c` and `cc9b36f`.
 
-Not verified: the new DDL on PostgreSQL (not applied to `saleor_db`; `FOR UPDATE OF p`, the invoice sequence and `ON CONFLICT` are untested against a real DB), a real Mercado Pago sandbox payment, the live browser flow, the `live_mode` field behavior with test users, and a second approved payment on an already paid order (the stock is protected, but the money would be taken twice; sandbox only, refunds are out of scope).
+Live validation (partial): DDL applied to `saleor_db` (idempotent on re-run); stack recreated with `MP_SANDBOX=true` and `mercadopago`/`reportlab` installed in `saleor_api`. Via the BFF a registered and logged-in user added 2 units to the cart and called `POST /api/v1/checkout` (pickup): a `pending_payment` order of 180000.00 ARS was stored, a real Mercado Pago sandbox `init_point` (mercadopago.com.ar) came back, and stock stayed at 10. This exposed a bug: `COUNTRY_MONEY_CODE=ARS` (a currency code, as in the user's `.env`) was rejected with `PAYMENTS_DISABLED`; `currency_id()` now accepts a country or a currency code (test added, Core 51 passed).
+
+Not verified: the payment itself with the MP test buyer in the browser, then the `paid` transition, stock decrement, invoice row and PDF download, cart clearing, the `live_mode` behavior with test users, guest-cart merge on login against the live stack, the full `import_catalog.sql` on a clean PostgreSQL, and a second approved payment on an already paid order (stock protected; money would be taken twice; sandbox only).
 
 ## Next step
 
-Run the live sandbox validation (`cu-c05-flow-validation`): apply the DDL, set `MP_SANDBOX=true`, restart containers, and walk login -> guest cart merge -> checkout -> MP test buyer payment -> confirmation, stock and invoice.
+Open `http://localhost:3000`, log in, add games, press checkout, pay on Mercado Pago with the test buyer and land on `/compra/resultado`; then verify the order is `paid`, stock decreased, and the invoice downloads from Mis Compras. Check `cu-c05-flow-validation` only after that.
