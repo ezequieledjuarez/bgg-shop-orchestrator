@@ -74,4 +74,4 @@ Existing agent guidance contains stale framework/spec references, nonstandard ex
 - No functional service tests were run because these edits change agent guidance only; service pytest runners were also unavailable in the local service environments.
 - Engram full-task mirror remains pending/unverified because the memory write capability was unavailable in this runtime.
 - Work-unit commits: BFF `bc38ce501f964d8e5fe200e1e897885e8b23e08b`; Core `08b2105570eb19416d961fd66266884f3bc8d3d1`; Frontend `7e57f3b0ad45536cb1d7263030270213a28f4b27`; root `9a1d3cfee18264991f8a192140cf5a9196dc27b7`.
-- Next: no implementation work remains; verify the task-record commit and preserve unrelated untracked files.
+- Next: synchronize the full task document to Engram when its write capability is available; no implementation work remains.
