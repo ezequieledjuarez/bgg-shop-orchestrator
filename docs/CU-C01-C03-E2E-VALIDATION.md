@@ -38,10 +38,16 @@ No password in plaintext was found in `auth_user` (checked for the run password)
 
 Frontend suites: `npm run test -- --run` 17/17 passed; `npm run build` OK; `npm run lint` 0 errors, 1 warning (`src/App.tsx:203`, set-state-in-effect).
 
-## Not executed / findings
+## Follow-up run (browser + suites)
 
-- Browser (UI) flow was not driven in this run: covered only by the Vitest suites above. Status: NOT EXECUTED.
-- Core and BFF pytest suites: NOT EXECUTED (pytest is not installed in the service venvs).
-- Finding A: the duplicate-email code is `EMAIL_EXISTS` at runtime, while earlier docs mention `DUPLICATE_EMAIL`. Check the OpenAPI enum against the BFF.
-- Finding B (pre-existing, not re-tested here): the review-create `502` fallback uses `{"error": ...}` instead of `errors[]` and is undocumented in OpenAPI.
-- Test rows were left in the live DB pending cleanup approval.
+- Browser flow (headless Chromium via Playwright, live stack): register → redirected to `/login` → login (session stored in `sessionStorage`) → review on `/juegos/watergate` → toast "pending moderation". Result: PASS. Screenshots in `docs/evidence/e2e-ui/`.
+- DB: review row created with `rating=4`, `status=PENDING`; both runs' synthetic rows (users 6 and 7, reviews 2 and 4) were deleted by id. Final counts: `auth_user` 5, `product_review` 1 (same as before the runs).
+- BFF pytest: 20 passed (new `tests/test_reviews.py`). Core pytest: 23 passed (new `tests/test_graphql_reviews.py`, DB mocked).
+- Finding B fixed: review-create `502` now returns `errors[]` (`UPSTREAM_ERROR`) and is documented in OpenAPI. Finding A: runtime code `EMAIL_EXISTS` is the canonical one; the OpenAPI spec does not enumerate it, so no change.
+
+## Remaining
+
+- Core uniqueness per user and product is only tested as an `IntegrityError` mapping; it needs a real PostgreSQL test DB.
+- `auth_controller.py` 502 fallback still uses the legacy `{"error": ...}` shape.
+- Frontend types are not regenerated for the new review `502`.
+- SDL-vs-Graphene drift test is still missing.
