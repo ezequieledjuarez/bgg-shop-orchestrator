@@ -118,3 +118,16 @@ execution check.
 - `ece3221` — review persistence schema.
 - `38aae5c` — Core GraphQL review contract.
 - `a6e3f9b` — BFF slug-based review endpoints.
+
+## Authentication copy correction
+
+The login and registration screens now use Spanish for all visible copy:
+labels, buttons, navigation, validation messages, service errors, and success
+states. Routes, request payloads, session storage keys, and API error codes
+remain unchanged.
+
+The review persistence flow was also exercised against the loaded database by
+the user; no additional schema change was required for this correction.
+
+The Frontend authentication tests, full test suite, lint, and production build
+were rerun after the translation.
