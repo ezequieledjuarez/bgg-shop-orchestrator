@@ -10,7 +10,7 @@ A logged-in buyer with cart items pays through Mercado Pago (test/sandbox only),
 
 - Persist `purchase_order`, `purchase_order_line` (price/name snapshot) and `invoice`; decrement `product_boardgame.quantity` once on payment approval; clear the cart after payment.
 - Core (GraphQL, authenticated only): `checkout`, `confirmPayment`, `myOrders`, `myOrder`; PDF invoice endpoint with ownership check.
-- BFF REST: `POST /api/v1/checkout`, `POST /api/v1/checkout/confirm`, `GET /api/v1/orders`, `GET /api/v1/orders/{id}`, `GET /api/v1/orders/{id}/invoice`.
+- BFF REST: `POST /api/v1/checkout`, `POST /api/v1/checkout/confirm`, `GET /api/v1/orders`, `GET /api/v1/orders/{id}`, `POST /api/v1/orders/{id}/retry-payment`, `GET /api/v1/orders/{id}/invoice`.
 - Frontend: "Proceder al Pago", address and shipping mode form, MP redirect, return route `/compra/resultado`, retry on rejection, "Mis Compras", invoice download.
 - Out of scope: real payments, webhooks, refunds, address book, shipping costs.
 
@@ -30,8 +30,8 @@ A logged-in buyer with cart items pays through Mercado Pago (test/sandbox only),
 
 - [x] **cu-c05-order-schema** — DDL in `import_catalog.sql`.
 - [x] **cu-c05-core-checkout** — Core checkout/confirm/orders/invoice, SDL, tests with MP mocked, compose and `.env.example`.
-- [ ] **cu-c05-bff-contract** — BFF endpoints, OpenAPI, tests.
-- [ ] **cu-c05-frontend-flow** — Frontend flow and tests.
+- [x] **cu-c05-bff-contract** — BFF endpoints, OpenAPI, tests.
+- [x] **cu-c05-frontend-flow** — Frontend flow and tests.
 - [ ] **cu-c05-docs-verification** — READMEs, suites, evidence.
 - [ ] **cu-c05-flow-validation** — Live sandbox: login -> guest cart merge -> checkout -> MP payment -> order, stock, invoice.
 
@@ -55,8 +55,12 @@ Per task: one delegated writer per layer, spot checks by the parent, independent
 
 Route: delegated writer (Core layer); risk tier: high.
 
-Core evidence: idempotent order, line snapshot, and invoice DDL added; GraphQL purchase operations and PDF invoice route implemented; SDL synchronized with Graphene. Verification: `cd bgg-shop-core && PATH=/home/eze/.pyenv/versions/3.12.8/bin:$PATH python -m pytest -q` — 47 passed, 0 failed; generated-schema introspection comparison passed without SDL drift. Added 14 test functions (16 cases), with Mercado Pago calls mocked. Focused auth/product suite also passed: 7 passed. No live database or payment request was used; BFF and frontend checks remain pending.
+Core evidence: idempotent order, line snapshot, and invoice DDL added; GraphQL purchase operations and PDF invoice route implemented; SDL synchronized with Graphene. Verification: `cd bgg-shop-core && PATH=/home/eze/.pyenv/versions/3.12.8/bin:$PATH python -m pytest -q` — 47 passed, 0 failed; generated-schema introspection comparison passed without SDL drift. Added 14 test functions (16 cases), with Mercado Pago calls mocked. Focused auth/product suite also passed: 7 passed. No live database or payment request was used; BFF implementation and tests are complete, with frontend and cross-service verification pending.
+
+BFF evidence: delegated writer; risk tier: high (payment identity and invoice access). Implemented checkout, confirmation, retry, authenticated order list/detail, and protected PDF invoice streaming; added DTO validation, Core user-error mapping, OpenAPI schemas, README guidance, and 18 purchase test functions (30 parameterized test cases). Authored BFF diff: 1,289 changed lines (1,285 additions, including 549 new-file lines, plus 4 deletions). Verification: `cd /home/eze/develop/boardgame-app/bgg-shop-bff && .venv/bin/python -m pytest -q` — 66 passed, 0 failed. Invoice requests validate the UUID before URL construction and verify the bearer with Core before forwarding it to the invoice endpoint; no Mercado Pago access token is used in the BFF. OpenAPI YAML parser validation was unavailable because neither PyYAML nor Ruby is installed; the spec paths and refs were reviewed structurally. No live payment or Core request was made.
+
+Frontend evidence: route: delegated writer (frontend layer); risk tier: high (payment identity, order ownership, and invoice access). Implemented the authenticated checkout form and Mercado Pago redirect, return-state confirmation/retry flows, authenticated order history/detail, and bearer-authenticated invoice download. Added 13 focused CU-C05 test cases (including parameterized error mapping); complete Frontend suite: 35 passed, 0 failed. Authored frontend diff: 711 additions and 6 deletions; generated OpenAPI contract update: 554 lines. `npm run generate:types` succeeded against `../bgg-shop-bff/specs/openapi.yaml`. Verification: `npm test -- --run` — 35 passed; `npm run build` — TypeScript and Vite build passed; `npm run lint` — passed with the single pre-existing `src/App.tsx:355` set-state-in-effect warning and no new warnings. No live payment, order, or invoice request was made.
 
 ## Next step
 
-Implement the BFF contract, then complete cross-service verification.
+Implement the frontend flow, then complete cross-service verification.
