@@ -16,8 +16,13 @@ CREATE TABLE IF NOT EXISTS product_boardgame (
     price_amount NUMERIC(12, 2) NOT NULL,     -- Precisión monetaria fija
     publisher VARCHAR(150) NOT NULL,
     image_url VARCHAR(500) NOT NULL,
-    image_filename VARCHAR(255) NOT NULL
+    image_filename VARCHAR(255) NOT NULL,
+    quantity INTEGER NOT NULL DEFAULT 0 CHECK (quantity >= 0)
 );
+
+ALTER TABLE product_boardgame
+    ADD COLUMN IF NOT EXISTS quantity INTEGER NOT NULL DEFAULT 0
+    CHECK (quantity >= 0);
 
 -- ==============================================================================
 -- 2. DML: Inserción Masiva de Datos (49 Registros)
@@ -78,6 +83,16 @@ INSERT INTO product_boardgame (
     (328871, 'Braintrust', 2021, 2, 5, 30, 8, 1.50, 'Juegos Party', 45000.00, 'Zebra Games', '/media/portadas/3288710.webp', '3288710.webp'),
     (346702, 'Ages of Gilded: Industrial Revolution', 2022, 1, 4, 90, 12, 2.95, 'Juegos de Estrategia', 138000.00, 'Maldito Games', '/media/portadas/3467020.webp', '3467020.webp');
 
+-- Development catalog seed inventory; this is not a production stock default.
+UPDATE product_boardgame SET quantity = 10 WHERE bgg_id IN (
+    274364, 230244, 272409, 241451, 297030, 286096, 256916, 266830, 287936,
+    283863, 284083, 285905, 266507, 281259, 266192, 251247, 284378, 269207,
+    271320, 286063, 282433, 312480, 284108, 295770, 287923, 302260, 291457,
+    316554, 314040, 285192, 290448, 296880, 300582, 310873, 298047, 284380,
+    312251, 317072, 306188, 282524, 316552, 342942, 318084, 312680, 324856,
+    316410, 338300, 328871, 346702
+);
+
 -- ==============================================================================
 -- 3. DDL: Creación de la tabla 'product_review'
 -- ==============================================================================
@@ -115,3 +130,32 @@ CREATE INDEX IF NOT EXISTS idx_product_review_approved_game
 
 CREATE INDEX IF NOT EXISTS idx_product_review_user
     ON product_review (user_id);
+
+-- ==============================================================================
+-- 4. DDL: Persistent carts (anonymous carts have no account user_id)
+-- ==============================================================================
+
+CREATE TABLE IF NOT EXISTS shopping_cart (
+    cart_id UUID PRIMARY KEY,
+    user_id INTEGER UNIQUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_shopping_cart_user
+        FOREIGN KEY (user_id)
+        REFERENCES auth_user (id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS shopping_cart_line (
+    cart_id UUID NOT NULL,
+    bgg_id INTEGER NOT NULL,
+    quantity INTEGER NOT NULL CHECK (quantity > 0),
+    CONSTRAINT pk_shopping_cart_line PRIMARY KEY (cart_id, bgg_id),
+    CONSTRAINT fk_shopping_cart_line_cart
+        FOREIGN KEY (cart_id)
+        REFERENCES shopping_cart (cart_id)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_shopping_cart_line_product
+        FOREIGN KEY (bgg_id)
+        REFERENCES product_boardgame (bgg_id)
+        ON DELETE CASCADE
+);
