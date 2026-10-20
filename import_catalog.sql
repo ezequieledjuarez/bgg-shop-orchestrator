@@ -5,7 +5,7 @@
 CREATE TABLE IF NOT EXISTS product_boardgame (
     id SERIAL PRIMARY KEY,
     bgg_id INTEGER UNIQUE NOT NULL,
-    name VARCHAR(250) NOT NULL,
+    name VARCHAR(250) UNIQUE NOT NULL,
     release_year SMALLINT NOT NULL,
     min_players SMALLINT NOT NULL,
     max_players SMALLINT NOT NULL,
@@ -77,3 +77,41 @@ INSERT INTO product_boardgame (
     (338300, 'Bitoku', 2021, 1, 4, 120, 14, 3.55, 'Juegos de Estrategia', 182000.00, 'Devir', '/media/portadas/3383000.webp', '3383000.webp'),
     (328871, 'Braintrust', 2021, 2, 5, 30, 8, 1.50, 'Juegos Party', 45000.00, 'Zebra Games', '/media/portadas/3288710.webp', '3288710.webp'),
     (346702, 'Ages of Gilded: Industrial Revolution', 2022, 1, 4, 90, 12, 2.95, 'Juegos de Estrategia', 138000.00, 'Maldito Games', '/media/portadas/3467020.webp', '3467020.webp');
+
+-- ==============================================================================
+-- 3. DDL: Creación de la tabla 'product_review'
+-- ==============================================================================
+
+CREATE TABLE IF NOT EXISTS product_review (
+    id BIGSERIAL PRIMARY KEY,
+    bgg_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    rating SMALLINT NOT NULL,
+    body VARCHAR(2000) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_product_review_product
+        FOREIGN KEY (bgg_id)
+        REFERENCES product_boardgame (bgg_id)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_product_review_user
+        FOREIGN KEY (user_id)
+        REFERENCES auth_user (id)
+        ON DELETE CASCADE,
+    CONSTRAINT uq_product_review_user_game
+        UNIQUE (user_id, bgg_id),
+    CONSTRAINT chk_product_review_rating
+        CHECK (rating BETWEEN 1 AND 5),
+    CONSTRAINT chk_product_review_body
+        CHECK (char_length(btrim(body)) BETWEEN 1 AND 2000),
+    CONSTRAINT chk_product_review_status
+        CHECK (status IN ('PENDING', 'APPROVED', 'HIDDEN', 'DELETED'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_product_review_approved_game
+    ON product_review (bgg_id, created_at)
+    WHERE status = 'APPROVED';
+
+CREATE INDEX IF NOT EXISTS idx_product_review_user
+    ON product_review (user_id);

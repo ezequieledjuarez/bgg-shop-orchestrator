@@ -37,6 +37,11 @@ Usa OpenAPI 3.2 como versión objetivo y sigue las buenas prácticas de OpenAPI:
 - Descripciones útiles, ejemplos válidos y nombres consistentes.
 - Sin duplicar esquemas cuando puedan reutilizarse mediante `$ref`.
 
+En este proyecto, el contrato BFF vigente está en
+`bgg-shop-bff/specs/openapi.yaml`. Mantén el modo de planificación: el agente
+validador BFF y el generador de pruebas son responsables de comprobar su
+alineación con Flask y los tipos generados del frontend.
+
 ## Entradas admitidas
 
 ### Operaciones con body
