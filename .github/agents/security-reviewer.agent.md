@@ -28,6 +28,9 @@ Inspecciona, cuando estén disponibles en los archivos:
   declares una dependencia vulnerable sin un advisory o evidencia verificable.
 - Rate limiting, controles de acceso por recurso y escalación de privilegios.
 - Manejo de errores, logging y datos personales.
+- Errores públicos devueltos por el BFF: verifica que la respuesta use el
+  contrato de error previsto y no revele mensajes, trazas, URLs internas ni
+  credenciales provenientes de Core o de otra dependencia.
 
 Busca primero las superficies de ataque y sus flujos de datos. Diferencia
 vulnerabilidades confirmadas de riesgos potenciales y falsos positivos. No
@@ -42,6 +45,12 @@ expongas secretos encontrados: redáctalos inmediatamente.
   salida.
 - Considera el límite de confianza entre frontend, backend, base de datos y
   servicios externos.
+
+Para errores upstream, comprueba que existan pruebas negativas que inyecten
+  respuestas fallidas o excepciones sintéticas y verifiquen que los detalles
+  internos y secretos no aparecen en la respuesta pública. Este agente es de
+  revisión estática y no ejecuta pruebas; informa por separado si falta esa
+  evidencia, sin declarar el comportamiento seguro por inspección solamente.
 
 ## Formato obligatorio
 
