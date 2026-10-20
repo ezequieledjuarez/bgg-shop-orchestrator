@@ -32,7 +32,7 @@ A logged-in buyer with cart items pays through Mercado Pago (test/sandbox only),
 - [x] **cu-c05-core-checkout** — Core checkout/confirm/orders/invoice, SDL, tests with MP mocked, compose and `.env.example`.
 - [x] **cu-c05-bff-contract** — BFF endpoints, OpenAPI, tests.
 - [x] **cu-c05-frontend-flow** — Frontend flow and tests.
-- [ ] **cu-c05-docs-verification** — READMEs, suites, evidence.
+- [x] **cu-c05-docs-verification** — READMEs, suites, evidence.
 - [ ] **cu-c05-flow-validation** — Live sandbox: login -> guest cart merge -> checkout -> MP payment -> order, stock, invoice.
 
 ## Acceptance criteria
@@ -61,6 +61,12 @@ BFF evidence: delegated writer; risk tier: high (payment identity and invoice ac
 
 Frontend evidence: route: delegated writer (frontend layer); risk tier: high (payment identity, order ownership, and invoice access). Implemented the authenticated checkout form and Mercado Pago redirect, return-state confirmation/retry flows, authenticated order history/detail, and bearer-authenticated invoice download. Added 13 focused CU-C05 test cases (including parameterized error mapping); complete Frontend suite: 35 passed, 0 failed. Authored frontend diff: 711 additions and 6 deletions; generated OpenAPI contract update: 554 lines. `npm run generate:types` succeeded against `../bgg-shop-bff/specs/openapi.yaml`. Verification: `npm test -- --run` — 35 passed; `npm run build` — TypeScript and Vite build passed; `npm run lint` — passed with the single pre-existing `src/App.tsx:355` set-state-in-effect warning and no new warnings. No live payment, order, or invoice request was made.
 
+Independent reviews (high risk): Core found three issues, all fixed with tests: retry could overwrite a concurrently paid order (now a conditional UPDATE refusing non-payable states), live-mode payments were not rejected (confirm now refuses `live_mode: true`), and approval cleared the whole cart (now only purchased quantities are removed). BFF review: no findings. Frontend review: unvalidated `init_point` redirect, fixed with an https Mercado Pago host allowlist plus tests.
+
+Final suites: Core 50 passed; BFF 66 passed; Frontend 43 passed, build OK, lint 1 pre-existing warning. Commits on `CU-05` (not pushed or merged): Core `7fe630f`, BFF `375d5cf`, Frontend `fe4ae1e`, orchestrator `42da91c` and `cc9b36f`.
+
+Not verified: the new DDL on PostgreSQL (not applied to `saleor_db`; `FOR UPDATE OF p`, the invoice sequence and `ON CONFLICT` are untested against a real DB), a real Mercado Pago sandbox payment, the live browser flow, the `live_mode` field behavior with test users, and a second approved payment on an already paid order (the stock is protected, but the money would be taken twice; sandbox only, refunds are out of scope).
+
 ## Next step
 
-Implement the frontend flow, then complete cross-service verification.
+Run the live sandbox validation (`cu-c05-flow-validation`): apply the DDL, set `MP_SANDBOX=true`, restart containers, and walk login -> guest cart merge -> checkout -> MP test buyer payment -> confirmation, stock and invoice.
