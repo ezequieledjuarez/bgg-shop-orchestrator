@@ -46,7 +46,7 @@ The repository contains use-case descriptions, implementation notes, service con
 
 **Observed evidence:** Five files created (490 authored lines total). Required template headings are present in all five files, local Markdown links resolve, no trailing whitespace was found, and `git diff --check` passed. Spot checks confirmed the authentication and sandbox checkout specifications identify the implemented flow and limitations. No executable tests or builds were applicable to this passive documentation change.
 
-**Commit:** Pending local work-unit commit; no files have been staged yet. Do not push.
+**Primary work-unit commit:** `2f5a8a647ec9f47cf2018c3c0605cd3ccab74d16` — `docs: add canonical as-built specifications`. Local commit only; no push.
 
 ## Progress and Evidence
 
@@ -57,4 +57,4 @@ The repository contains use-case descriptions, implementation notes, service con
 
 ## Next Step
 
-Create one local Conventional Commit containing only the five specs and this task record. Do not push.
+The five canonical specifications are generated, verified, and committed locally. Deriving project-specific specs remains a separate follow-up; do not push this commit.
