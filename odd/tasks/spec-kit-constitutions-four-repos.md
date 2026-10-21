@@ -70,13 +70,10 @@ All four repositories contain Spec Kit assets, but their constitutions are still
   - `bgg-shop-bff/.specify/memory/constitution.md`
   - `bgg-shop-frontend/.specify/memory/constitution.md`
 - Traceability reviewed against canonical specs `specs/001-authentication-as-built/spec.md` through `specs/005-checkout-orders-invoice-as-built/spec.md`; service specs `bgg-shop-{core,bff,frontend}/specs/001-*` through `005-*`; contracts `bgg-shop-core/specs/schema.graphql` and `bgg-shop-bff/specs/openapi.yaml`; implementation areas `bgg-shop-core/saleor/graphql/`, `bgg-shop-bff/src/controllers/`, and `bgg-shop-frontend/src/`; and tests under `bgg-shop-core/tests/`, `bgg-shop-bff/tests/`, and `bgg-shop-frontend/src/`.
-- Verification observed: the requested Python placeholder/trailing-whitespace check passed; referenced paths exist; Frontend `generate:types` points to the BFF OpenAPI file; and `git diff --check` passed in all four worktrees as a supplemental tracked-worktree check. Constitution files are untracked, so `git diff --check` does not inspect them.
+- Verification observed before commit: the Python placeholder/trailing-whitespace check passed; referenced paths exist; Frontend `generate:types` points to the BFF OpenAPI file; and staged `git diff --check` passed in all four repositories.
 - Application tests were not run; this is a documentation-only change and no contract or application source was changed.
-- Independent read-only review found one task-record scope inconsistency: the scope said only the constitutions could change, while the authorized edit list included this record. Corrected the scope statement to include the tracking record.
-- The independent reviewer found no substantive constitution or contract-ownership defects; compatibility rules and referenced paths were verified.
+- Independent read-only review found no substantive constitution or contract-ownership defects. It identified one task-record scope inconsistency, which was corrected and independently rechecked.
 - Final parent verification after the scoped task-record correction passed: no constitution placeholders or trailing whitespace; all 20 root/service specs and contract/type paths exist; task scope and authorized edit surfaces agree. `git diff --check` passed in all four repositories.
-- Independent review found no substantive constitution or contract-ownership defects. The task-record scope inconsistency was corrected and rechecked.
-- No application tests were run because this documentation-only change does not alter executable behavior.
 
 ## Completion
 
@@ -86,4 +83,5 @@ All four repositories contain Spec Kit assets, but their constitutions are still
   - Core: `e8083f6` — `docs(spec-kit): define Core constitution`
   - BFF: `c7f6794` — `docs(spec-kit): define BFF constitution`
   - Frontend: `2078da8` — `docs(spec-kit): define Frontend constitution`
+- Tracking evidence update: `9fa5c66` — `docs(sdd): record constitution adoption evidence`
 - All commits are local. No remote operations are authorized or planned.
