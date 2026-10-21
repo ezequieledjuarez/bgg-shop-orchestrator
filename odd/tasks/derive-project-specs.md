@@ -56,12 +56,12 @@ The root specifications document end-to-end buyer behavior. Core GraphQL SDL and
 
 ### BFF — Derive BFF specs
 
-- [ ] `bff-specs`: Create five BFF specs mapping canonical behavior to REST/OpenAPI, Core operations, controllers/services, and BFF tests.
+- [x] `bff-specs`: Create five BFF specs mapping canonical behavior to REST/OpenAPI, Core operations, controllers/services, and BFF tests.
 - Depends on: `core-specs`.
-- Route: delegated direct to the Documentation Agent; five non-trivial documents require contract-to-implementation mapping.
+- Route: completed directly by the Documentation Agent after reading all five canonical specs, the BFF OpenAPI contract, Core SDL, BFF controllers/services/DTOs, and BFF tests.
 - Risk: passive documentation; verification is structural readback and parent spot-check.
-- Verification: confirm all five files exist; check canonical/evidence links and referenced REST/Core operations; confirm OpenAPI/code are unchanged.
-- Commit: pending.
+- Verification: PASS — structural readback confirmed all five BFF specs, canonical and test evidence links, all local Markdown links, named REST operation IDs against `bgg-shop-bff/specs/openapi.yaml`, Core operations against `bgg-shop-core/specs/schema.graphql`, and required document sections. PASS — `git -C bgg-shop-bff diff --cached --check` completed before commit. PASS — commit `666888907d474390c084850a57d821a30b13810e` contains only the five BFF spec paths (`git -C bgg-shop-bff show --format= --name-only 666888907d474390c084850a57d821a30b13810e`). PASS — BFF OpenAPI/source/tests and Core SDL/source/tests have no changes from this work (`git -C bgg-shop-bff diff HEAD^ HEAD --exit-code -- specs/openapi.yaml src tests`; `git -C bgg-shop-core diff --exit-code -- specs/schema.graphql saleor tests`). No application tests were run because this was documentation-only work.
+- Commit: `666888907d474390c084850a57d821a30b13810e` — `docs(bff): derive five as-built functional specs` (nested `bgg-shop-bff` repository, branch `CU-05`).
 
 ### FRONTEND — Derive Frontend specs
 
@@ -82,6 +82,6 @@ The root specifications document end-to-end buyer behavior. Core GraphQL SDL and
 
 - Feature branch: `CU-05` (not the local `main` branch).
 - Existing worktree has unrelated untracked files, including the Frontend project; do not stage or alter them outside the explicit authorized edit scope.
-- Progress: Core derivation is complete; BFF and Frontend remain pending.
-- Verification evidence: five Core specs were committed on `CU-05`; structural validation resolved all relative references and confirmed every named GraphQL operation against `bgg-shop-core/specs/schema.graphql`. The contract, implementation, and Core tests remain unchanged. No application test suite or live-stack check was run for this passive documentation change.
-- Next step: derive and structurally verify the five BFF project specs.
+- Progress: Core and BFF derivation are complete; Frontend remains pending.
+- Verification evidence: Core commit `88300a398a58db71c67615b4b78a9043a4534c54` and BFF commit `666888907d474390c084850a57d821a30b13810e` contain only their five respective project specs. Structural validation confirmed project spec references and operation mappings. OpenAPI, Core SDL, implementation, and tests remain unchanged by these documentation commits. No application test suite or live-stack check was run for this passive documentation work.
+- Next step: derive and structurally verify the five Frontend project specs.
