@@ -81,4 +81,9 @@ All four repositories contain Spec Kit assets, but their constitutions are still
 ## Completion
 
 - CONSTITUTION-1 is complete. The four constitutions define shared authority and service-specific governance without changing existing behavior, contracts, application code, tests, or generated types.
-- Local work-unit commits are pending in the four existing `CU-05` branches. No remote operations are authorized or planned.
+- Work-unit commits on the existing `CU-05` branches:
+  - Orchestrator: `d637ffa` — `docs(spec-kit): establish shared constitution`
+  - Core: `e8083f6` — `docs(spec-kit): define Core constitution`
+  - BFF: `c7f6794` — `docs(spec-kit): define BFF constitution`
+  - Frontend: `2078da8` — `docs(spec-kit): define Frontend constitution`
+- All commits are local. No remote operations are authorized or planned.
