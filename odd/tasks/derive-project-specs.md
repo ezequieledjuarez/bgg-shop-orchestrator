@@ -65,12 +65,12 @@ The root specifications document end-to-end buyer behavior. Core GraphQL SDL and
 
 ### FRONTEND — Derive Frontend specs
 
-- [ ] `frontend-specs`: Create five Frontend specs mapping canonical behavior to UI states, BFF requests/types, and Frontend tests.
+- [x] `frontend-specs`: Create five Frontend specs mapping canonical behavior to UI states, BFF requests/types, and Frontend tests.
 - Depends on: `bff-specs`.
-- Route: delegated direct to the Documentation Agent; five non-trivial documents require UI/API/test evidence mapping.
+- Route: completed directly by the Documentation Agent after reading all five canonical specs, BFF OpenAPI, generated Frontend API types, relevant React screens/API helpers, and Frontend tests.
 - Risk: passive documentation; verification is structural readback and parent spot-check.
-- Verification: confirm all five files exist; check canonical/evidence links and BFF references; confirm app code and generated types are unchanged.
-- Commit: pending.
+- Verification: PASS — structural readback confirmed all five Frontend specs, required sections, canonical/evidence links, generated BFF schema types, OpenAPI paths, and operation IDs. PASS — `git -C /home/eze/develop/boardgame-app/bgg-shop-frontend diff --cached --check` completed before commit. PASS — commit `6a615fdd8e72af7b3c838daca8b83b4d76d844a4` contains only the five Frontend spec paths (`git -C bgg-shop-frontend show --format= --name-only 6a615fdd8e72af7b3c838daca8b83b4d76d844a4`). PASS — tracked Frontend source and package configuration were unchanged (`git -C bgg-shop-frontend diff --exit-code HEAD -- src package.json` before commit); generated API types, OpenAPI, tests, and Core SDL were not edited. No Frontend application tests were run because this was passive documentation work.
+- Commit: `6a615fdd8e72af7b3c838daca8b83b4d76d844a4` — `docs(frontend): derive five as-built functional specs` (nested `bgg-shop-frontend` repository, branch `CU-05`).
 
 ## Delivery and verification
 
@@ -82,6 +82,6 @@ The root specifications document end-to-end buyer behavior. Core GraphQL SDL and
 
 - Feature branch: `CU-05` (not the local `main` branch).
 - Existing worktree has unrelated untracked files, including the Frontend project; do not stage or alter them outside the explicit authorized edit scope.
-- Progress: Core and BFF derivation are complete; Frontend remains pending.
-- Verification evidence: Core commit `88300a398a58db71c67615b4b78a9043a4534c54` and BFF commit `666888907d474390c084850a57d821a30b13810e` contain only their five respective project specs. Structural validation confirmed project spec references and operation mappings. OpenAPI, Core SDL, implementation, and tests remain unchanged by these documentation commits. No application test suite or live-stack check was run for this passive documentation work.
-- Next step: derive and structurally verify the five Frontend project specs.
+- Progress: Core, BFF, and Frontend derivation are complete.
+- Verification evidence: Core commit `88300a398a58db71c67615b4b78a9043a4534c54`, BFF commit `666888907d474390c084850a57d821a30b13810e`, and Frontend commit `6a615fdd8e72af7b3c838daca8b83b4d76d844a4` contain only their five respective project specs. Structural validation confirmed project spec references, evidence links, OpenAPI operation/path mappings, and generated Frontend API schema references. OpenAPI, Core SDL, application implementation, generated types, and tests were not changed by this documentation work. No application test suite or live-stack check was run for this passive documentation work.
+- Next step: no project-spec derivation task remains; retain the existing delivery strategy without creating or publishing a PR.
