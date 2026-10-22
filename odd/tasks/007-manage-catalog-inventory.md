@@ -13,6 +13,8 @@ Branch: feature/CU-ADM-01
   - `EventPublisher` stub and `InMemoryAuditStore`.
   - Unit tests validating stock behavior, promotion stacking, coupon concurrency, event publishing, and audit entries.
 
+- DB DDL: Appended DDL statements to `import_catalog.sql` to create tables for `promotion`, `coupon`, `coupon_counter`, `audit_log`, and `stock_reservation` as a migration script for integration into the dev DB.
+
 ## Verification
 
 - Ran unit tests under `bgg-shop-core` with `pytest` (66 passed).
@@ -31,3 +33,4 @@ Branch: feature/CU-ADM-01
 - Integrate these data models into the Django/Saleor data layer and create real migrations.
 - Implement persistence-backed event publishing (Celery/Redis) and webhook delivery.
 - Add integration tests wired to the actual database and the BFF contract tests.
+ - Apply the appended DDL in `import_catalog.sql` to the development DB (psql) and then generate Django migrations mapping to these tables or convert them into Django models + migrations.
