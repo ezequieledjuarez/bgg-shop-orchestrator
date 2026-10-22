@@ -66,6 +66,11 @@ services:
     command: python manage.py runserver 0.0.0.0:8000
     environment:
       <<: *saleor-environment
+      MP_ACCESS_TOKEN: ${MP_ACCESS_TOKEN:-}
+      MP_SANDBOX: ${MP_SANDBOX:-false}
+      COUNTRY_MONEY_CODE: ${COUNTRY_MONEY_CODE:-AR}
+      MP_CURRENCY_ID: ${MP_CURRENCY_ID:-}
+      FRONTEND_URL: "http://localhost:3000"
     ports:
       - "8000:8000"
     volumes:
