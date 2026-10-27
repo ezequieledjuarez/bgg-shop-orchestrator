@@ -14,3 +14,10 @@ tests/**/diagnostics/
 tests/**/*.json
 tests/**/*.txt
 tests/e2e/storageState.json
+# Project-specific runtime artifacts
+odd/*.txt
+odd/*.json
+odd/**/diagnostics/
+# Insomnia exports and local test artifacts
+insomnia/*.json
+test-results/
