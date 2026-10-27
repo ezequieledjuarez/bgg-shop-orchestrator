@@ -1,0 +1,16 @@
+# Orchestrator specific ignores
+__pycache__/
+*.py[cod]
+.env
+.env.*
+.DS_Store
+*.log
+
+# Test diagnostics/artifacts
+**/diagnostics/
+**/diagnostics/*.json
+**/diagnostics/*.txt
+tests/**/diagnostics/
+tests/**/*.json
+tests/**/*.txt
+tests/e2e/storageState.json
