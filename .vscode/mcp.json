@@ -1,0 +1,33 @@
+{
+  "servers": {
+    "context7": {
+      "type": "http",
+      "url": "https://mcp.context7.com/mcp"
+    },
+    "engram": {
+      "command": "/mnt/c/Users/ezequ/AppData/Local/engram/bin/engram.exe",
+      "args": [
+        "mcp",
+        "--tools=agent"
+      ],
+      "type": "stdio"
+    },
+    "terminal": {
+      "command": "bash",
+      "args": [
+        "-c",
+        "PYENV_VERSION=3.12.8 ~/.pyenv/shims/uvx --from mcp-server-git mcp-server-git"
+      ]
+    },
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@executeautomation/playwright-mcp-server"
+      ],
+      "env": {
+        "HEADLESS": "true"
+      }
+    }
+  }
+}
