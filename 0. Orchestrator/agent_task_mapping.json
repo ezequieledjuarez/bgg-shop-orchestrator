@@ -1,0 +1,39 @@
+{
+  "version": "2026-10-22",
+  "description": "Agent -> Task mapping for orchestrator (core, bff, frontend). Used as a machine-readable guide for delegation.",
+  "projects": {
+    "bgg-shop-core": {
+      "tasks": {
+        "models_migrations": ["Python Entity Implementer", "Database Migration Agent"],
+        "resolvers_services": ["Python Entity Implementer", "Test Generator (Core)"],
+        "tests_integration": ["Test Generator (Core)", "QA Integration Validator"],
+        "security_review": ["Security Reviewer"]
+      }
+    },
+    "bgg-shop-bff": {
+      "tasks": {
+        "openapi_contracts": ["API Contract Validator", "Documentation Agent"],
+        "controllers_services": ["Python Entity Implementer", "Test Generator (BFF)"],
+        "contract_tests": ["Test Generator (BFF)", "API Contract Validator"],
+        "e2e_validation": ["QA Integration Validator"]
+      }
+    },
+    "bgg-shop-frontend": {
+      "tasks": {
+        "components_pages": ["React Developer", "Test Generator (Frontend)"],
+        "integration_client": ["React Developer", "QA Integration Validator"],
+        "e2e_tests": ["Test Generator (Frontend)", "QA Integration Validator"]
+      }
+    }
+  },
+  "rules": {
+    "allowed_edit_surfaces": "Each delegation must include an explicit list of allowed file paths. Agents must not write outside them.",
+    "skills_injection": "The orchestrator will inject SKILL.md paths in each delegation; agents must read them before modifying code.",
+    "verification": {
+      "passive": "structural readback",
+      "medium": "writer self-verification (unit tests, lint, format)",
+      "high": "writer + independent verifier (security, migrations, public contracts)"
+    },
+    "pr_gate": "Do not prepare PR/MR for flows covered by this mapping until front<->bff<->core validation and QA evidence are recorded in odd/tasks/<feature>.md"
+  }
+}
