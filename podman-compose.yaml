@@ -12,6 +12,9 @@ x-saleor-environment: &saleor-environment
   EMAIL_URL: "smtp://mailpit:1025"
   DEFAULT_FROM_EMAIL: "noreply@saleor.local"
   MEDIA_ROOT: "/app/media"
+  # OpKeys feature flags and internal secret for service-to-service calls
+  OPKEYS_ISSUE_ON_LOGIN: ${OPKEYS_ISSUE_ON_LOGIN:-"true"}
+  OPKEY_INTERNAL_SECRET: ${OPKEY_INTERNAL_SECRET:-changeme-internal-secret}
 
 services:
   # 1. Base de Datos Transaccional (OLTP - PostgreSQL 15)
@@ -95,6 +98,8 @@ services:
       SECRET_KEY: ${SECRET_KEY:-secret-key}
       # Comunicación interna entre contenedores por DNS de Podman
       SALEOR_GRAPHQL_URL: "http://api:8000/graphql/"
+      # Base URL para llamadas internas (usado por opkey_middleware)
+      SALEOR_BASE_URL: "http://api:8000"
     ports:
       - "5000:5000"
     volumes:

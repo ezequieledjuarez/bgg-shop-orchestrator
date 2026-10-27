@@ -102,3 +102,14 @@ directories captured above]
 |-----------|------------|-------------------------------------|
 | [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
 | [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |
+
+## Contracts & Endpoints Gate (MANDATORY)
+
+This gate enforces that, for features touching the API surface (BFF controllers, public/private endpoints, or contracts), the plan MUST include the following before Phase 2 (tasks) or any implementation work begins:
+
+1. **Endpoints availability**: a concrete list of REST endpoints to be implemented or modified, including HTTP methods, paths, expected request/response shapes, and auth scopes.
+2. **OpenAPI contract draft**: an OpenAPI document (or fragment) under `specs/<feature>/contracts/` describing the endpoints, schemas, security, and examples.
+3. **Evidence plan**: clear description of how the contract will be validated (unit tests, contract tests, E2E flows) and which QA artifacts will be produced.
+4. **Acceptance criteria**: concrete checks that must pass before any PR/MR is prepared (see project-wide PR/MR gating policy in `/.agents/agents.md`).
+
+Failure to include these items will block `/speckit.tasks` (Phase 2) generation and any implementation delegation. The orchestrator and `speckit.implement` will enforce this gate by refusing to create tasks or launch writers for features that modify API surfaces without the contract+endpoints evidence.

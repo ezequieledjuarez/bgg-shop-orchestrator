@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS product_boardgame (
     max_players SMALLINT NOT NULL,
     playing_time_minutes SMALLINT NOT NULL,
     min_age SMALLINT NOT NULL,
+    max_age SMALLINT NOT NULL DEFAULT 0,
     weight NUMERIC(3, 2) NOT NULL,            -- Escala BGG (1.00 - 5.00)
     category VARCHAR(250) NOT NULL,
     price_amount NUMERIC(12, 2) NOT NULL,     -- Precisión monetaria fija
@@ -23,6 +24,43 @@ CREATE TABLE IF NOT EXISTS product_boardgame (
 ALTER TABLE product_boardgame
     ADD COLUMN IF NOT EXISTS quantity INTEGER NOT NULL DEFAULT 0
     CHECK (quantity >= 0);
+
+ALTER TABLE product_boardgame
+    ADD COLUMN IF NOT EXISTS max_age SMALLINT NOT NULL DEFAULT 0;
+
+-- ==============================================================================
+-- A. SEEDS PRELIMINARES: Admin user y promociones para E2E (se ejecutan primero)
+-- ============================================================================
+
+-- Insert an admin user for E2E testing if it does not exist.
+-- NOTE: The password inserted here is a placeholder string. After running this SQL
+-- you should set a usable password with your application's user-management
+-- command (for Django: `python manage.py changepassword e2e_admin`) or create an
+-- access token via the Core's GraphQL `login`/`token` workflow as appropriate.
+INSERT INTO auth_user (username, email, password, is_staff, is_superuser, is_active, date_joined)
+SELECT 'e2e_admin', 'e2e_admin@example.com', '!', TRUE, TRUE, TRUE, CURRENT_TIMESTAMP
+WHERE NOT EXISTS (SELECT 1 FROM auth_user WHERE username = 'e2e_admin');
+
+-- Create a short-lived promotion and a coupon to exercise promotion flows
+INSERT INTO promotion (name, stackable, discount_pct, starts_at, ends_at, created_at)
+SELECT 'E2E Promo 10%', TRUE, 10.00, now() - interval '1 day', now() + interval '30 days', CURRENT_TIMESTAMP
+WHERE NOT EXISTS (SELECT 1 FROM promotion WHERE name = 'E2E Promo 10%');
+
+-- Insert a coupon tied to the promotion above if not present
+INSERT INTO coupon (code, promotion_id, remaining, created_at)
+SELECT 'E2E10-ONE', p.id, 100, CURRENT_TIMESTAMP
+FROM promotion p
+WHERE p.name = 'E2E Promo 10%'
+    AND NOT EXISTS (SELECT 1 FROM coupon c WHERE c.code = 'E2E10-ONE');
+
+-- Initialize coupon_counter for the inserted coupon (optional)
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM coupon WHERE code = 'E2E10-ONE') THEN
+        INSERT INTO coupon_counter (coupon_id, counter)
+        SELECT c.id, 0 FROM coupon c WHERE c.code = 'E2E10-ONE' AND NOT EXISTS (SELECT 1 FROM coupon_counter cc WHERE cc.coupon_id = c.id);
+    END IF;
+END$$;
 
 -- ======================================================================
 -- 1.b DDL: Promotions, Coupons, Audit Log, Stock Reservations
@@ -268,3 +306,42 @@ CREATE TABLE IF NOT EXISTS invoice (
     CONSTRAINT fk_invoice_order FOREIGN KEY (order_id)
         REFERENCES purchase_order (id) ON DELETE CASCADE
 );
+
+-- ==============================================================================
+-- (moved earlier in file: preliminary E2E seeds)
+
+-- ==============================================================================
+-- 7. CLEANUP: Remove test products used by E2E runs to keep seeds idempotent
+-- ==============================================================================
+
+-- Delete any previously created E2E test products that may cause DUPLICATE conflicts
+-- Remove specific BGG IDs known to be used by E2E or by specs to avoid DUPLICATE conflicts
+DELETE FROM product_boardgame WHERE bgg_id IN (123456, 123457, 123458, 274364) OR name LIKE 'E2E Test%';
+
+-- Vacuum analyze to keep DB stats reasonable (no-op on some hosted DBs)
+VACUUM ANALYZE product_boardgame;
+
+-- ==============================================================================
+-- 8. DDL: Tabla para OpSession (Operations & Keys) - usado por BFF para validar X-Op-Key
+-- Nota: Django mantiene el esquema a través de migraciones; este bloque es
+-- un helper SQL para entornos donde se prefiera crear la tabla manualmente.
+-- ==============================================================================
+
+CREATE TABLE IF NOT EXISTS opkeys_opsession (
+    id UUID PRIMARY KEY,
+    user_id INTEGER REFERENCES auth_user(id) ON DELETE SET NULL,
+    key_hash VARCHAR(128) NOT NULL,
+    ops JSONB NOT NULL DEFAULT '[]'::jsonb,
+    issued_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMPTZ,
+    last_used TIMESTAMPTZ,
+    revoked BOOLEAN NOT NULL DEFAULT FALSE,
+    description VARCHAR(255)
+);
+
+CREATE INDEX IF NOT EXISTS idx_opkeys_key_hash ON opkeys_opsession (key_hash);
+
+-- Ejemplo de inserción (opcional): crear una sesión de operación para pruebas.
+-- INSERT INTO opkeys_opsession (id, user_id, key_hash, ops, issued_at, expires_at)
+-- VALUES ('00000000-0000-0000-0000-000000000001', NULL, 'EXAMPLE_HASH', '["GET:/graphql"]', now(), now() + interval '30 minutes')
+
