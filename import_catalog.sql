@@ -24,6 +24,55 @@ ALTER TABLE product_boardgame
     ADD COLUMN IF NOT EXISTS quantity INTEGER NOT NULL DEFAULT 0
     CHECK (quantity >= 0);
 
+-- ======================================================================
+-- 1.b DDL: Promotions, Coupons, Audit Log, Stock Reservations
+-- ======================================================================
+
+CREATE TABLE IF NOT EXISTS promotion (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(250) NOT NULL,
+    stackable BOOLEAN NOT NULL DEFAULT FALSE,
+    discount_pct NUMERIC(5,2) NOT NULL DEFAULT 0.00,
+    starts_at TIMESTAMPTZ,
+    ends_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS coupon (
+    id SERIAL PRIMARY KEY,
+    code VARCHAR(64) UNIQUE NOT NULL,
+    promotion_id INTEGER REFERENCES promotion(id) ON DELETE SET NULL,
+    remaining BIGINT NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_coupon_code ON coupon (code);
+
+-- Optional lightweight counter table for atomic analytics / counters
+CREATE TABLE IF NOT EXISTS coupon_counter (
+    coupon_id INTEGER PRIMARY KEY REFERENCES coupon(id) ON DELETE CASCADE,
+    counter BIGINT NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS audit_log (
+    id BIGSERIAL PRIMARY KEY,
+    actor VARCHAR(150),
+    action VARCHAR(100) NOT NULL,
+    target_table VARCHAR(150),
+    target_id VARCHAR(64),
+    diff JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS stock_reservation (
+    id BIGSERIAL PRIMARY KEY,
+    bgg_id INTEGER NOT NULL REFERENCES product_boardgame(bgg_id),
+    reserved_qty INTEGER NOT NULL CHECK (reserved_qty >= 0),
+    reason VARCHAR(250),
+    expires_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 -- ==============================================================================
 -- 2. DML: Inserción Masiva de Datos (49 Registros)
 -- ==============================================================================
