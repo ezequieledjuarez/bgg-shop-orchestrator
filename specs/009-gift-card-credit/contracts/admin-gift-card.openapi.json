@@ -1,0 +1,26 @@
+{
+  "openapi": "3.2.0",
+  "info": {"title": "Admin Gift Card Issuance Draft", "version": "0.1.0"},
+  "paths": {
+    "/api/v1/admin/gift-cards": {
+      "post": {
+        "operationId": "adminCreateGiftCard",
+        "summary": "Issue a single-use gift card",
+        "description": "The code is returned once and must not be logged or cached. Repeated requests create separate cards.",
+        "security": [{"BearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {"application/json": {"schema": {"type": "object", "additionalProperties": false, "required": ["amount"], "properties": {"amount": {"type": "string", "pattern": "^(?:[0-9]{1,10})(?:\\.[0-9]{1,2})?$", "examples": ["20000.00"]}}}}}
+        },
+        "responses": {
+          "201": {"description": "Issued card and one-time code.", "headers": {"Cache-Control": {"schema": {"type": "string"}, "example": "no-store"}}, "content": {"application/json": {"schema": {"type": "object", "required": ["id", "code", "amount", "currency"], "properties": {"id": {"type": "string", "format": "uuid"}, "code": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "amount": {"type": "string"}, "currency": {"type": "string", "const": "ARS"}}}}}},
+          "400": {"description": "Invalid amount or request."},
+          "401": {"description": "Authentication required."},
+          "403": {"description": "Administrator permission required."},
+          "502": {"description": "Core unavailable or invalid response; issuance outcome may be unknown."}
+        }
+      }
+    }
+  },
+  "components": {"securitySchemes": {"BearerAuth": {"type": "http", "scheme": "bearer"}}}
+}

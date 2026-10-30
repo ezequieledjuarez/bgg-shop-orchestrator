@@ -3,6 +3,7 @@ version: '3.8'
 # Ancla de YAML con variables para Saleor y Flask
 x-saleor-environment: &saleor-environment
   SECRET_KEY: ${SECRET_KEY:-super-secret-key}
+  SECRET_KEY_FALLBACKS: ${SECRET_KEY_FALLBACKS:-[]}
   DATABASE_URL: ${DATABASE_URL:-postgresql://saleor:saleor_pass@db:5432/saleor}
   CELERY_BROKER_URL: "redis://redis:6379/1"
   REDIS_URL: "redis://redis:6379/0"
