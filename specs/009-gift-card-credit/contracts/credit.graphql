@@ -1,0 +1,29 @@
+"""Draft additions to the existing Core GraphQL schema; not yet implemented."""
+extend type Query {
+  myCredit: CreditBalancePayload!
+}
+
+extend type Mutation {
+  redeemGiftCard(code: String!, idempotencyKey: ID!): CreditBalancePayload!
+  checkoutWithCredit(
+    shippingMode: ShippingMode!
+    address: ShippingAddressInput
+    idempotencyKey: ID!
+  ): CreditCheckoutPayload!
+}
+
+type CreditBalance {
+  balance: String!
+  currency: String!
+}
+
+type CreditBalancePayload {
+  credit: CreditBalance
+  userErrors: [OrderUserError!]!
+}
+
+type CreditCheckoutPayload {
+  order: PurchaseOrder
+  credit: CreditBalance
+  userErrors: [OrderUserError!]!
+}
