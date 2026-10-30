@@ -308,6 +308,38 @@ CREATE TABLE IF NOT EXISTS invoice (
 );
 
 -- ==============================================================================
+-- 6. DDL and local seed: single-use gift cards
+-- ==============================================================================
+
+CREATE TABLE IF NOT EXISTS gift_card (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    code_hash BYTEA NOT NULL UNIQUE CHECK (octet_length(code_hash) = 32),
+    amount NUMERIC(12, 2) NOT NULL CHECK (amount > 0),
+    currency VARCHAR(3) NOT NULL CHECK (currency ~ '^[A-Z]{3}$'),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    redeemed_at TIMESTAMPTZ,
+    redeemed_by INTEGER REFERENCES auth_user(id) ON DELETE RESTRICT,
+    CONSTRAINT chk_gift_card_redemption
+        CHECK ((redeemed_at IS NULL) = (redeemed_by IS NULL))
+);
+
+WITH test_card AS MATERIALIZED (
+    SELECT
+        '00000000-0000-4000-8000-000000020000'::UUID AS id,
+        replace(gen_random_uuid()::text, '-', '') ||
+            replace(gen_random_uuid()::text, '-', '') AS code
+), inserted_card AS (
+    INSERT INTO gift_card (id, code_hash, amount, currency)
+    SELECT id, sha256(convert_to(code, 'UTF8')), 20000.00, 'ARS'
+    FROM test_card
+    ON CONFLICT (id) DO NOTHING
+    RETURNING id, amount, currency
+)
+SELECT test_card.code AS gift_card_code, inserted_card.amount, inserted_card.currency
+FROM test_card
+JOIN inserted_card ON inserted_card.id = test_card.id;
+
+-- ==============================================================================
 -- (moved earlier in file: preliminary E2E seeds)
 
 -- ==============================================================================
