@@ -2,10 +2,16 @@
 
 **Feature Branch**: `not applicable — retrospective specification`
 **Created**: 2026-10-21
-**Status**: As-built / retrospective
+**Status**: Closed and validated with scope limitations on 2026-10-30.
 **Input**: CU-C03, implemented product detail and customer review behavior in the orchestrator repository.
 
 > This document records implemented buyer behavior. It does not adopt every behavior described in the original use-case narrative as a current requirement. “MUST” statements below describe the observed baseline.
+
+## Closure and scope
+
+- A current authenticated browser-to-BFF-to-Core submission passed in a disposable PostgreSQL stack; the pending review was persisted, a duplicate was rejected, and the pending review was excluded from the public list. The active database was not modified by this run.
+- Moderation is outside this feature. The detail UI does not show weight or category, the anonymous sign-in prompt has no login link, and not-found feedback shares the general error container; see the [Frontend spec](../../bgg-shop-frontend/specs/003-product-detail-reviews/spec.md).
+- The isolated stack used only authentication/session/OpKey migrations and the product/review DDL. Full initialization of unrelated GraphQL credit migrations was not validated; the first attempt failed because `gift_card` was absent.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -83,9 +89,12 @@ A signed-in buyer submits one rating and written review for a product and receiv
 
 - **Verified in source/tests**: The contract and linked implementation/tests cover slug-based detail, approved public reviews, review summary, authenticated review creation, and domain validation.
 - **Reported, not rerun for this documentation change**: The CU-C03 implementation notes report Core, BFF, and Frontend automated test results, type generation, lint, and build checks. The notes state that independent live end-to-end database validation was environment-dependent and not completed in that workspace.
+- **Observed on 2026-10-30**: Core product/review tests passed (28); BFF product/review/OpenAPI tests passed (39); the Frontend suite passed (146). Two anonymous, read-only browser tests against local services passed. In a disposable PostgreSQL instance with no network, the review DDL accepted a pending review and enforced uniqueness, rating/body checks, and product foreign-key constraints. The database check did not execute GraphQL or an authenticated browser submission.
+- **Observed subsequently on 2026-10-30**: The [opt-in isolated browser test](../../bgg-shop-frontend/tests/e2e/product-reviews.spec.ts) passed through a temporary BFF and Core connected to disposable PostgreSQL. SQL verification found one synthetic user and one `PENDING` review; the duplicate request returned 409 and the public detail excluded the pending review. The temporary services and database were removed.
+- **Contract correction**: Review errors use a documented `errors[]` shape and fixed public messages; OpenAPI requires bearer authentication rather than offering OpKey alone. See [BFF review controller](../../bgg-shop-bff/src/controllers/reviews_controller.py), [OpenAPI](../../bgg-shop-bff/specs/openapi.yaml), and [BFF review tests](../../bgg-shop-bff/tests/test_reviews.py).
 - **Known scope boundary**: New reviews remain pending; moderation is outside scope. Wishlist and administrator workflows remain excluded from these canonical buyer specifications.
 - **Evidence references**:
   - Use case and implementation record: [CasosDeUso.md](../../CasosDeUso.md), [CU-C03 review notes](../../docs/CU-C03-REVIEWS.md).
   - Contracts: [BFF OpenAPI](../../bgg-shop-bff/specs/openapi.yaml), [Core GraphQL schema](../../bgg-shop-core/specs/schema.graphql).
   - Implementation: [Frontend product and review flow](../../bgg-shop-frontend/src/App.tsx), [BFF product detail controller](../../bgg-shop-bff/src/controllers/product_detail_controller.py), [BFF review controller](../../bgg-shop-bff/src/controllers/reviews_controller.py), [Core GraphQL implementation](../../bgg-shop-core/saleor/graphql/api.py).
-  - Tests: [BFF product tests](../../bgg-shop-bff/tests/test_products.py), [BFF review tests](../../bgg-shop-bff/tests/test_reviews.py), [Core product tests](../../bgg-shop-core/tests/test_graphql_products.py), [Core review tests](../../bgg-shop-core/tests/test_graphql_reviews.py), [Frontend application tests](../../bgg-shop-frontend/src/App.test.tsx).
+  - Tests: [BFF product tests](../../bgg-shop-bff/tests/test_products.py), [BFF review tests](../../bgg-shop-bff/tests/test_reviews.py), [Core product tests](../../bgg-shop-core/tests/test_graphql_products.py), [Core review tests](../../bgg-shop-core/tests/test_graphql_reviews.py), [Frontend review tests](../../bgg-shop-frontend/src/App.reviews.test.tsx), [read-only browser tests](../../bgg-shop-frontend/tests/e2e/product-reviews.spec.ts).
