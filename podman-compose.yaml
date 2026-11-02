@@ -14,8 +14,8 @@ x-saleor-environment: &saleor-environment
   DEFAULT_FROM_EMAIL: "noreply@saleor.local"
   MEDIA_ROOT: "/app/media"
   # OpKeys feature flags and internal secret for service-to-service calls
-  OPKEYS_ISSUE_ON_LOGIN: ${OPKEYS_ISSUE_ON_LOGIN:-"true"}
-  OPKEY_INTERNAL_SECRET: ${OPKEY_INTERNAL_SECRET:-changeme-internal-secret}
+  OPKEYS_ISSUE_ON_LOGIN: ${OPKEYS_ISSUE_ON_LOGIN:-false}
+  OPKEY_INTERNAL_SECRET: ${OPKEY_INTERNAL_SECRET:-}
 
 services:
   # 1. Base de Datos Transaccional (OLTP - PostgreSQL 15)
@@ -76,7 +76,7 @@ services:
       MP_CURRENCY_ID: ${MP_CURRENCY_ID:-}
       FRONTEND_URL: "http://localhost:3000"
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     volumes:
       - ./bgg-shop-core:/app:z
       - saleor_media:/app/media:z
@@ -84,6 +84,22 @@ services:
       db:
         condition: service_healthy
       redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  opkey-audit-retention:
+    image: ${OPKEY_RETENTION_IMAGE:-localhost/boardgame-app_api:latest}
+    container_name: saleor_opkey_retention
+    profiles: ["opkey-audit"]
+    command: python manage.py run_opkey_audit_retention
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://saleor:saleor_pass@db:5432/saleor}
+      SECRET_KEY: ${SECRET_KEY:-super-secret-key}
+      DEBUG: "True"
+    volumes:
+      - ./bgg-shop-core:/app:z
+    depends_on:
+      db:
         condition: service_healthy
     restart: unless-stopped
 
@@ -101,6 +117,7 @@ services:
       SALEOR_GRAPHQL_URL: "http://api:8000/graphql/"
       # Base URL para llamadas internas (usado por opkey_middleware)
       SALEOR_BASE_URL: "http://api:8000"
+      OPKEY_INTERNAL_SECRET: ${OPKEY_INTERNAL_SECRET:-}
     ports:
       - "5000:5000"
     volumes:
@@ -137,6 +154,7 @@ services:
     environment:
       # React consume ÚNICAMENTE la API REST expuesta por Flask
       VITE_API_BASE_URL: "http://localhost:5000/api/v1"
+      VITE_USE_OPKEY: ${VITE_USE_OPKEY:-false}
     ports:
       - "3000:3000"
     volumes:
