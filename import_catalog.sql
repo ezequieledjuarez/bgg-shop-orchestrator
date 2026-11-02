@@ -218,6 +218,16 @@ CREATE INDEX IF NOT EXISTS idx_product_review_approved_game
 CREATE INDEX IF NOT EXISTS idx_product_review_user
     ON product_review (user_id);
 
+CREATE TABLE IF NOT EXISTS wishlist_entry (
+    user_id INTEGER NOT NULL,
+    bgg_id INTEGER NOT NULL,
+    CONSTRAINT pk_wishlist_entry PRIMARY KEY (user_id, bgg_id),
+    CONSTRAINT fk_wishlist_entry_user FOREIGN KEY (user_id)
+        REFERENCES auth_user (id) ON DELETE CASCADE,
+    CONSTRAINT fk_wishlist_entry_product FOREIGN KEY (bgg_id)
+        REFERENCES product_boardgame (bgg_id) ON DELETE CASCADE
+);
+
 -- ==============================================================================
 -- 4. DDL: Persistent carts (anonymous carts have no account user_id)
 -- ==============================================================================

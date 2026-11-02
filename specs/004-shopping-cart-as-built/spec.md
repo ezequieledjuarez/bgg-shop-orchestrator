@@ -2,7 +2,7 @@
 
 **Feature Branch**: `not applicable — retrospective specification`
 **Created**: 2026-10-21
-**Status**: As-built / retrospective
+**Status**: Closed for the local scope with limitations on 2026-10-30.
 **Input**: CU-C04, implemented guest and authenticated shopping-cart behavior in the orchestrator repository.
 
 > This document describes observed cart behavior and known boundaries. It is not a proposal to reserve stock or to guarantee inventory until purchase. “MUST” statements below describe the observed baseline.
@@ -44,7 +44,7 @@ A buyer adjusts a product quantity or removes a product and sees the cart totals
 - A cart quantity must be positive; invalid quantity and integer-bound inputs are rejected as validation errors.
 - Prices and subtotals are recalculated from the current product price when the cart is read; the cart does not freeze product prices.
 - Cart edits do not reserve or decrement inventory. Inventory changes only after a purchase is approved.
-- Guest-to-account merge behavior is implemented, but the end-to-end live-stack merge remains pending verification in the implementation record.
+- Guest-to-account merge passed in an isolated local browser-to-Core flow; merging with an existing account cart was also checked in a PostgreSQL test.
 - Empty, loading, error, and stock-warning states are distinct cart states.
 
 ## Requirements *(mandatory)*
@@ -85,7 +85,8 @@ A buyer adjusts a product quantity or removes a product and sees the cart totals
 
 - **Verified in source/tests**: Cart operations, stock-bound behavior, server-side cart association, and cart presentation are represented in Core, BFF, and Frontend source/tests.
 - **Reported, not rerun for this documentation change**: The CU-C04 notes report automated Core/BFF/Frontend checks and a live development check of stock capping, totals, removal, and guest persistence.
-- **Pending verification**: Real-browser behavior, guest-to-account merge against the live stack, purchase after login/cart merge, and a clean-database run remain pending as recorded in the implementation notes.
+- **Verified on 2026-10-30**: [Browser E2E](../../bgg-shop-frontend/tests/e2e/cart-wishlist-purchase.spec.ts) passed against isolated local Frontend, BFF, Core, and disposable PostgreSQL: guest cart persistence, login merge, purchase with a simulated provider, and cart cleanup. [Core PostgreSQL test](../../bgg-shop-core/tests/test_graphql_credit_postgres.py) also checks merging into an existing account cart.
+- **Pending verification**: Full clean-database bootstrap and a real payment-provider round trip remain unverified. The isolated setup used selected DDL and synthetic data, not the active database.
 - **Known limitation**: Cart edits do not reserve stock. Availability is subject to change before purchase approval.
 - **Evidence references**:
   - Use case and implementation record: [CasosDeUso.md](../../CasosDeUso.md), [CU-C04 cart notes](../../docs/CU-C04-SHOPPING-CART.md).

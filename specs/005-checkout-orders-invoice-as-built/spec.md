@@ -2,10 +2,15 @@
 
 **Feature Branch**: `not applicable — retrospective specification`
 **Created**: 2026-10-21
-**Status**: As-built / retrospective
+**Status**: Closed for the local, non-production scope with an accepted exception on 2026-10-30.
 **Input**: CU-C05, implemented sandbox checkout, buyer orders, payment confirmation, and invoice behavior in the orchestrator repository.
 
 > This document records current buyer-facing behavior and verification limits. Payment behavior is sandbox-only; it does not represent production payment acceptance. “MUST” statements below describe the observed baseline.
+
+## Closure and Exception
+
+- The user accepted closure for the local, non-production scope while the second distinct approved payment for the same preference is not routed to manual review. This is an unresolved risk, not a verified safeguard; [Core task T010](../../bgg-shop-core/specs/005-checkout-orders-invoice/tasks.md) remains open.
+- The E2E provider was simulated, the active database was not changed, and a real provider round trip and complete clean-database bootstrap were not verified. Existing payment preferences may remain payable; no prevention of a real duplicate charge or refund is claimed.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -102,7 +107,11 @@ A signed-in buyer reviews their purchase history and downloads an invoice for an
 
 - **Verified in source/tests**: The source, contract, and existing tests cover order creation, payment retry/confirmation, order ownership, invoice retrieval, and the buyer-facing checkout/history flow.
 - **Reported, not rerun for this documentation change**: The CU-C05 implementation note reports Core, BFF, and Frontend automated tests and a successful checkout creation against a sandbox flow. Provider behavior is mocked in automated tests.
-- **Pending end-to-end verification**: The full browser return-to-provider-to-confirm path, stock decrement, invoice row/PDF download, cart cleanup, and guest-cart merge followed by checkout remain pending in the implementation record. Sandbox test-user `live_mode` behavior and clean-database loading also remain unverified there.
+- **Pending provider verification**: The implementation record did not verify the browser return through the actual provider. Sandbox test-user `live_mode` behavior and full clean-database loading also remain unverified.
+- **Isolated local verification, 2026-10-30**: [Browser E2E](../../bgg-shop-frontend/tests/e2e/cart-wishlist-purchase.spec.ts) passed twice with a simulated provider, checking login merge, payment confirmation, PDF download, and cart/Wishlist cleanup. Disposable PostgreSQL confirmed two paid orders, two invoices, and stock decreasing from five to three. This does not verify an actual provider round trip or full database bootstrap.
+- **Local follow-up, 2026-10-30**: The Frontend now presents a returned `cancelled` order distinctly; checkout/navigation tests passed 82 cases. Core order and disposable-PostgreSQL tests passed 182 cases with one expected failure. The new PostgreSQL scenarios verify repeated simulated rejected, pending, paid-stock-conflict, and paid confirmations without duplicate stock or invoice effects.
+- **Unresolved second-payment risk**: When two distinct approved payments are verified for the same order and same preference, a disposable PostgreSQL regression shows the second confirmation does not return `PAYMENT_REQUIRES_REVIEW`; the regression is a strict expected failure. It does not simulate or prove a real provider charge. Older-preference and credit-guard scenarios have separate manual-review handling; reconciliation of late provider payments remains deferred in [the credit follow-up](../009-gift-card-credit/follow-up.md).
+- **Browser reproduction, 2026-10-30**: The opt-in second-payment scenario in [browser E2E](../../bgg-shop-frontend/tests/e2e/cart-wishlist-purchase.spec.ts) reached the same order through isolated Frontend, BFF, Core, and disposable PostgreSQL. The second simulated payment returned HTTP 200 and the UI displayed a paid outcome; the safety assertion expecting 409 failed. The order retained the first payment ID and had no review record. Provider responses were simulated; no real charge was attempted.
 - **Known limitations**: No webhooks, refunds, production payments, shipping costs, or shipping fulfillment are implemented. A buyer who pays but does not return may leave an order pending. The implementation notes also disclose possible duplicate charging on a second approved payment; refund handling is out of scope.
 - **Evidence references**:
   - Use case and implementation record: [CasosDeUso.md](../../CasosDeUso.md), [CU-C05 purchase notes](../../docs/CU-C05-PURCHASE.md).

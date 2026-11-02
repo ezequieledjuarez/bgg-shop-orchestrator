@@ -2,8 +2,8 @@
 
 **Feature Branch**: `not applicable — retrospective specification`
 **Created**: 2026-10-21
-**Status**: As-built / retrospective
-**Input**: CU-C01, implemented customer registration, login, and local logout in the orchestrator repository.
+**Status**: Closed and validated with exceptions on 2026-10-30, with owner approval.
+**Input**: CU-C01, implemented customer registration, login, and browser session handling in the orchestrator repository.
 
 > This document records the buyer-facing behavior evidenced in the current repository. It is not a proposal or a requirement to implement excluded behavior. “MUST” statements below describe the observed baseline.
 
@@ -35,14 +35,14 @@ A registered buyer signs in with email and password, sees the authenticated navi
 
 1. **Given** an existing account and valid credentials, **When** the buyer signs in, **Then** an authenticated session is stored for the current browser tab and the buyer returns to the catalog with authenticated navigation.
 2. **Given** invalid credentials, **When** the visitor attempts to sign in, **Then** the attempt is rejected with a generic credential error that does not disclose whether the email exists.
-3. **Given** an authenticated browser session, **When** the buyer signs out, **Then** the local session is removed and visitor navigation is shown.
+3. **Given** an authenticated browser session, **When** the buyer signs out and the BFF confirms logout, **Then** the local session is removed and visitor navigation is shown.
 
 ### Edge Cases
 
 - Registration with an already-used email is rejected; the duplicate is reported without creating a second account.
 - Invalid, malformed, or missing form fields are surfaced as validation feedback rather than a success state.
 - Unexpected service failures are shown as user-facing errors without exposing internal infrastructure details.
-- Local logout does not revoke already-issued tokens server-side; it only clears the browser's local session.
+- Logout requests the BFF to revoke any supplied OpKey and clear the refresh cookie. If the request fails, the frontend retains the session. Already-issued JWTs are not revoked; see [the OpKey specification](../../bgg-shop-core/specs/008-operations-keys-auth/spec.md).
 
 ## Requirements *(mandatory)*
 
@@ -53,7 +53,7 @@ A registered buyer signs in with email and password, sees the authenticated navi
 - **FR-003**: As built, successful registration MUST confirm account creation and direct the visitor to login without automatically signing them in.
 - **FR-004**: As built, the system MUST authenticate a registered buyer using email and password and present a generic error for invalid credentials.
 - **FR-005**: As built, a successful login MUST establish the browser session and update the visible navigation to the authenticated state.
-- **FR-006**: As built, logout MUST clear the browser's local session and restore visitor navigation.
+- **FR-006**: As built, confirmed logout MUST clear the browser's local session and restore visitor navigation; a failed logout retains the session.
 - **FR-007**: Passwords and internal service errors MUST NOT be shown in user-facing success or error responses.
 
 ### Key Entities
@@ -68,20 +68,23 @@ A registered buyer signs in with email and password, sees the authenticated navi
 - **SC-001**: All 3 registration acceptance scenarios produce their stated success, duplicate, or validation outcome.
 - **SC-002**: All 3 sign-in/sign-out acceptance scenarios produce the stated authentication and navigation outcome.
 - **SC-003**: In the invalid-credential scenario, the user-facing result does not distinguish an unknown email from a wrong password.
-- **SC-004**: After local logout, the browser has no stored local session and shows visitor navigation.
+- **SC-004**: After confirmed logout, the browser has no stored local session and shows visitor navigation.
 
 ## Assumptions
 
 - The feature is for buyer accounts using local email-and-password credentials.
 - A registration does not automatically sign in the new account.
 - Login state is local to the browser tab; the current implementation uses session storage.
-- Social login, email confirmation, password recovery/change, roles, administrative permissions, refresh-token rotation/revocation, and server-side logout are not part of implemented CU-C01.
+- Social login, email confirmation, password recovery/change, roles, administrative permissions, and JWT revocation are outside implemented CU-C01. Optional OpKey revocation on logout is documented separately in the OpKey specification.
 
 ### As-Built Status, Limitations, and Evidence
 
 - **Verified in source/tests**: Registration and login flows, local session handling, validation, and user-visible session state are represented by the linked implementation and tests.
 - **Reported, not rerun for this documentation change**: The implementation note records Core, BFF, and Frontend automated test results and successful HTTP checks. Browser automation was not run there; no browser or live-stack test was run as part of this specification work.
-- **Known security limitation**: Browser session data is accessible to same-origin JavaScript, and local logout does not revoke tokens on the server. Production session-hardening and token lifecycle behavior remain outside the implemented flow.
+- **Current focused checks**: On 2026-10-30, BFF auth/cart tests passed 31 tests, Core authentication schema and mocked guest-cart handoff passed 3 tests, and frontend authentication tests passed 11 tests. The full guest-cart merge was not verified by these checks.
+- **Accepted exceptions**: The owner accepted closure without a live guest-cart merge check or explicit frontend UI assertions for duplicate-email and invalid-credential responses. These checks were not run and are not represented as passed.
+- **Historical E2E evidence**: The [CU-C01/CU-C03 validation record](../../docs/CU-C01-C03-E2E-VALIDATION.md) reports a local browser registration and login run; it was not rerun for this documentation update.
+- **Known security limitation**: Browser session data is accessible to same-origin JavaScript, and logout does not revoke already-issued JWTs. Optional OpKey revocation has a separate validation record.
 - **Evidence references**:
   - Use case and implementation record: [CasosDeUso.md](../../CasosDeUso.md), [CU-C01 authentication notes](../../docs/CU-C01-AUTHENTICATION-CHANGES.md).
   - Contracts: [BFF OpenAPI](../../bgg-shop-bff/specs/openapi.yaml), [Core GraphQL schema](../../bgg-shop-core/specs/schema.graphql).
