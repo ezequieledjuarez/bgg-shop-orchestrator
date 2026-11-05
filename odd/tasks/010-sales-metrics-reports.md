@@ -209,4 +209,5 @@ No Core or frontend edits are included in B-2/B-3.
 - C-3 preparation commit: orchestrator `413a8df28a7520a550920df613b08b0ba17808a6`.
 - C-3 implementation and verification commits: Core `5c7724ec875ba8076d486fe87cd88966d263413d`; orchestrator `ae0e724956aaf9a9c5d9a441cbf4eb30d7e10bf0`.
 - C-4 query-plan review commits: Core `16fb5a92ee3dd642fec876638f096165a4c1e241`; orchestrator `8b777bf147bd6d0d0c6772c8cf96de561cd47be1`.
+- B-1 work-unit commits: BFF `6f40f5ef54b0e480b6520841ad329f214e702e34`; orchestrator `ecedb1752c11c12e7aee331fd0210c721c22e946`.
 - Next step: B-2/B-3 implement the BFF proxy/service/controller routes that make the B-1 tests pass; keep the frontend and Core data layers within their existing scoped tasks.

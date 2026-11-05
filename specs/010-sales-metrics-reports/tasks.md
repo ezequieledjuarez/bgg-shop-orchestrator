@@ -84,3 +84,4 @@ Core, BFF, and frontend tracks can run in parallel after X-5; the BFF integratio
 | B-1 | `pytest -q tests/test_admin_sales_metrics.py` from BFF | COLLECTION ERROR: `ModuleNotFoundError: No module named 'app'`; this console entrypoint did not add the BFF root to the import path. | 2026-11-05 |
 | B-1 | `PYTHONPATH=. .venv/bin/pytest -q tests/test_admin_sales_metrics.py` | COLLECTION ERROR: BFF virtual environment lacks `redis`, imported by `app.py`; no dependency installed. | 2026-11-05 |
 | B-1 | `PYTHONPATH=. pytest -q tests/test_admin_sales_metrics.py` | EXPECTED RED: 20 failed, 20 warnings; collection succeeded. Each request received 405 from the generic OPTIONS-only catch-all because the metrics/category GET routes are not registered. GraphQL requests were mocked; no database/network access. | 2026-11-05 |
+| B-1 | Work-unit commits | BFF `6f40f5ef54b0e480b6520841ad329f214e702e34`; orchestrator `ecedb1752c11c12e7aee331fd0210c721c22e946` | 2026-11-05 |
