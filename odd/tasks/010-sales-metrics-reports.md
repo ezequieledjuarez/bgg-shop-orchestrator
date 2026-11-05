@@ -45,17 +45,17 @@ The feature plan described only the main metrics operation, while the feature ta
 - `bgg-shop-bff/specs/010-sales-metrics-reports-tasks.md`
 - `odd/tasks/010-sales-metrics-reports.md`
 
-No resolver, controller, database schema, migration, or frontend implementation is included in this work unit.
+No resolver, controller, database schema, migration, or frontend implementation is included in X-5/C-1a.
 
 ### X-5 and C-1a routing and verification
 
-- Route: delegated direct contract writer across Core and BFF; parent performs independent review and handles commit after review.
+- Route: delegated direct contract writer across Core and BFF; parent performed independent review and commit.
 - Risk: high; these are public contracts and PostgreSQL integration tests.
-- Verification: parse OpenAPI and SDL with paired-bound assertions, compile the Core test module, and run the focused tests against a fresh loopback-only PostgreSQL 15 container using the cached image; never use the active `saleor` database.
+- Verification: OpenAPI/SDL parsing with paired-bound assertions, test module compile, and fresh loopback-only PostgreSQL 15 run; active `saleor` database was not used.
 
 ## Completed Work Unit: Core Resolver
 
-- [x] C-2 Implement `adminSalesMetrics` in `bgg-shop-core/saleor/graphql/api.py` and make metrics/filter cases in C-1/C-1a pass; `adminSalesCategories` cases remain for C-3.
+- [x] C-2 Implement `adminSalesMetrics` in `bgg-shop-core/saleor/graphql/api.py` and make metrics/filter cases in C-1/C-1a pass; categories remain for C-3.
 
 ### Allowed edit surfaces for C-2
 
