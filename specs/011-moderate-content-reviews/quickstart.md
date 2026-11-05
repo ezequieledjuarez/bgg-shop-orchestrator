@@ -63,4 +63,20 @@ Result: **1 passed (8.5s)** in the independent runner; the parent spot-check als
 
 The flow submitted a buyer review in `PENDING`, loaded it in the moderator queue, accepted it, and observed `status=ACCEPTED`, `publicly_visible=true`, and `cache_refresh_pending=false`. Public detail then included the review, and the accepted count and average increased. Unique fixture data and baseline-derived aggregate assertions make reruns repeatable.
 
-These are local observations only. No deployment, external service, persistent/default Saleor database, CI, staging, production, reject/restore, or soft-delete check is claimed. T016–T031 remain pending; T016 is next.
+These are local observations only. No deployment, external service, persistent/default Saleor database, CI, staging, production, reject/restore, or soft-delete check is claimed in this T015 evidence. See T022 below for the separate US2 reject/restore result. T023–T031 remain pending. T016's guarded PostgreSQL migration and concurrency tests were later run successfully as part of T019; see the task tracker.
+
+## T022 US2 reject/restore local integration — 2026-11-05
+
+Traceability: `specs/011-moderate-content-reviews/spec.md` User Story 2; action contract `specs/011-moderate-content-reviews/contracts/bff-openapi.yaml` (`POST /api/v1/admin/reviews/{review_id}/actions`); implementation in `bgg-shop-core/saleor/graphql/api.py`, `bgg-shop-bff/src/controllers/reviews_controller.py`, and `bgg-shop-frontend/src/admin/reviews/ReviewsPanel.tsx`; E2E test `bgg-shop-frontend/tests/e2e/product-reviews.spec.ts`.
+
+Run from `bgg-shop-frontend` against the isolated local stack:
+
+```bash
+env -u VITE_API_BASE_URL E2E_OPKEY_ISOLATED=true C03_DISPOSABLE_REVIEW_E2E=true npx playwright test tests/e2e/product-reviews.spec.ts --grep "moderator accepts" --project=chromium --workers=1
+```
+
+Final observed result: **1 passed (8.3s)**. The flow submitted a pending review, accepted it and confirmed public visibility plus count/average increase, rejected it and confirmed it disappeared while the summary returned to baseline, then restored it and confirmed public visibility plus count/average returned. Each action response reported `cache_refresh_pending=false`.
+
+The initial attempt showed stale public detail after rejection because the running isolated BFF had not reloaded the edited controller source. Restarting only `bgg_reviews_test_bff` reloaded it; `/health` then returned `{"status":"healthy"}`. The passing result is the rerun after this restart; the initial attempt is not reported as passing.
+
+The observed stack was Core `127.0.0.1:18001`, BFF `127.0.0.1:5001`, Frontend `127.0.0.1:3000`, with disposable PostgreSQL inside `bgg_reviews_test_db`. No default/shared `saleor_db` or remote environment was used. This confirms US2 reject/restore only; it is not evidence that US3 soft-delete is verified. Frontend E2E test commit: `85f2631` (`test(e2e): verify review rejection and restoration`).
