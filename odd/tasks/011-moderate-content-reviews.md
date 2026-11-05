@@ -11,7 +11,7 @@ The approved feature specification defines a staff/superuser moderation queue an
 ## Scope and Constraints
 
 - Follow `specs/011-moderate-content-reviews/tasks.md` in dependency order; its T001–T031 are the detailed checklist.
-- Local project only. No CI, staging, production, remote validation, or new service.
+- Local project only. No CI, staging, production, or remote validation. The disposable isolated setup was authorized for T015a/T015, and implementation of the remaining US2/US3 spec tasks is authorized; those tasks remain pending until their listed work and evidence are completed.
 - Require an active staff/superuser identity at Core and BFF; an operation key alone is insufficient.
 - Preserve the confirmed reversible review-status mapping and separate boolean soft-delete marker.
 - Report a committed Core mutation as success with `cache_refresh_pending=true` if bounded BFF cache refresh remains pending.
@@ -38,11 +38,12 @@ The approved feature specification defines a staff/superuser moderation queue an
 - [x] T008: Author Core queue/action/public-review tests and observe the expected RED.
 - [x] T009: Author BFF moderation tests and observe the expected RED.
 - [x] T010: Author frontend moderation queue and acceptance UI tests and observe the expected RED.
-- [ ] T011: Core queue/accept implementation and writer self-check passed, but the required independent review is pending because agent model routing is unavailable.
-- [ ] T012: Implement the BFF queue/action adapter (US1).
+- [x] T011: Implement the Core queue and pending-to-accepted action; writer and independent focused verification passed. Reject/restore/delete are deferred to T019/T026.
+- [x] T012: Implement the BFF queue/action adapter (US1); focused BFF tests and Python compile check passed. Independent review passed with no significant issues: 37 focused review tests, 85 admin/auth tests, and 11 contract/cache tests passed. BFF commit: `c4358ed`.
 - [x] T013: Implement the frontend review queue and acceptance action (US1).
 - [x] T014: Register the frontend moderation route and navigation entry (US1).
-- [ ] T015: Locally verify the complete queue-to-accept integration (US1).
+- [x] T015a: Establish and verify the user-authorized disposable local service/DB setup (depends on T011/T012/T014; prerequisite for T015). Isolated Compose parsing and local startup passed; see the evidence below and `specs/011-moderate-content-reviews/quickstart.md`.
+- [x] T015: Locally verify the queue-to-accept integration (US1; depends on T015a). Focused Playwright run passed; see exact command and outcome below.
 - [ ] T016–T022: Implement and locally verify rejection and restoration (US2).
 - [ ] T023–T029: Implement and locally verify soft deletion (US3).
 - [ ] T030–T031: Complete local documentation and focused functional validation.
@@ -85,8 +86,20 @@ Canonical validation, run after promotion:
 - Command: `PYTHONDONTWRITEBYTECODE=1 python -c 'import yaml; from pathlib import Path; from openapi_spec_validator import validate_spec; p=Path("bgg-shop-bff/specs/openapi.yaml"); spec=yaml.safe_load(p.read_text()); validate_spec(spec); print("OpenAPI valid")'`
   - Result: **PASS** — `OpenAPI valid`.
 
+## T012 BFF Implementation Evidence (2026-11-05)
+- Added registered admin review queue/action routes, service wrappers, GraphQL query/mutation adapters, request validation, and an active Authorization-backed staff/superuser check. Missing Authorization is rejected before Core calls, including a valid operation-key-only context.
+- Both moderation endpoints return `Cache-Control: no-store`; validation and authorization errors are fixed public messages, and unexpected upstream exceptions are sanitized. ACCEPT calls the existing cache-generation invalidation helper no more than twice after a successful Core mutation; it never repeats the Core mutation and returns committed 200 with `cache_refresh_pending=true` only when both cache attempts fail. Buyer `createReview` remains unchanged; REJECT/DELETE behavior is deferred to T020/T027.
+- Route: delegated direct, with the multi-file writer trigger (five non-trivial BFF source files). Risk tier: high because authorization and post-commit behavior changed. The writer-time note that independent review was pending is superseded by the completed review recorded in the task checklist and T015 result section below.
+- Command: `cd bgg-shop-bff && PYTHONPATH=. pytest -q tests/test_reviews.py`
+- Result: **37 passed, 34 warnings in 2.88s**. Warnings are existing `datetime.utcnow()` deprecations in `app.py`.
+- Command: `cd bgg-shop-bff && PYTHONPATH=. pytest -q tests/test_admin.py tests/test_admin_audit.py tests/test_opkey_middleware.py`
+- Result: **75 passed, 37 warnings in 1.18s**. Warnings are existing `datetime.utcnow()` deprecations in `app.py` and `proxy.py`.
+- Command: `cd bgg-shop-bff && python -m py_compile app.py src/auth.py src/services.py src/controllers/reviews_controller.py src/proxy.py`
+- Result: **PASS**. `git -C bgg-shop-bff diff --check` also passed.
+- BFF commit: `c4358ed` (`feat(bff): add review moderation queue and accept adapter`), containing only the six T012 BFF source/test files.
+
 ## Next Step
-T011 Core queue/accept implementation and its focused checks are complete. Proceed with T012–T015 only; do not treat the skipped migration integration cases as validation in the T011 test run.
+Historical next-step note: after T012 implementation, the independent BFF verification and T015 local integration were still pending. Both have since completed, as recorded below. Current next task: T016. Do not treat skipped Core migration cases as validation in the T011 test run.
 
 ## T008 Core Test Evidence (2026-11-05)
 - Added focused GraphQL tests in `bgg-shop-core/tests/test_graphql_reviews.py` for active staff and superuser identities; unauthenticated, inactive, non-admin, and operation-key-only/no-user rejection; status filtering; bounded pagination; stable order and game/review context; empty queues; pending acceptance; and accepted/non-deleted public detail aggregation.
@@ -116,6 +129,23 @@ T011 Core queue/accept implementation and its focused checks are complete. Proce
 - Command: `cd bgg-shop-core && python -m py_compile saleor/graphql/api.py`
 - Result: **PASS** (exit code 0).
 - Runtime schema check: moderation type fields/enums and `adminReviews`/`moderateReview` fields and arguments matched `bgg-shop-core/specs/schema.graphql`; no canonical contract file was edited.
-- Independent verification for T011 could not start: the code-review agent failed before execution with `Auto routing is unavailable; server-discovered preferences require the /auto endpoint`. T011 remains unchecked until independent review is available.
-- T012 delegated writer likewise failed before execution with the same agent-routing error. No BFF runtime files were changed; its T009 test-only RED remains recorded.
-- Next step: resume T011 independent verification and T012 through delegated workers when agent model routing is available. Do not replace required multi-file delegation with inline implementation.
+- Independent T011 review passed: focused Core tests reported 32 passed and 3 migration tests skipped in this run; compile check passed. The review confirmed authorization, parameterized queue filtering, pagination, ordering, row lock, idempotent accept, and contract alignment. Reject/restore/delete belong to later tasks.
+- Independent frontend verification passed: the six focused panel tests, TypeScript no-emit check, and frontend build all succeeded.
+- Historical note: an earlier BFF writer launch failed before execution due unavailable agent routing. T012 was subsequently implemented, independently reviewed, and committed as `c4358ed`; T016 is now the next task.
+
+## T015a / T015 Isolated Local Result (2026-11-05)
+
+- Scope and traceability: T015 covers `specs/011-moderate-content-reviews/spec.md`, Core implementation `bgg-shop-core/saleor/graphql/api.py`, BFF adapter `bgg-shop-bff/src/controllers/reviews_controller.py`, Frontend panel `bgg-shop-frontend/src/admin/reviews/ReviewsPanel.tsx`, and focused test `bgg-shop-frontend/tests/e2e/product-reviews.spec.ts`.
+- T015a config check: `podman-compose -f /home/eze/develop/boardgame-app/podman-compose.reviews-isolated.yaml config >/dev/null` — **passed**. The isolated file is separate from the default Compose stack, reused local images only, and the isolated services started and were healthy.
+- Resources observed: DB `bgg_reviews_test_db` on `127.0.0.1:55432`; Redis `bgg_reviews_test_redis` on `127.0.0.1:56379`; Core `bgg_reviews_test_api` on `127.0.0.1:18001`; BFF `bgg_reviews_test_bff` on `127.0.0.1:5001`; Frontend local at `127.0.0.1:3000`. Core GraphQL `POST { __typename }`, BFF `/health`, and Frontend returned HTTP 200.
+- The isolated stack is intentionally still running for the already-authorized local US2/US3 implementation and integration checks. Resource cleanup is deferred until those checks no longer need the stack; cleanup must remain limited to resources created by this isolated setup.
+- Isolation: no default `saleor_db` container, volume, port, or network was used; only the disposable `review_test` database was accessed. The Admin fixture was corrected inside that disposable database because its username differed from its email while Core authentication uses email as username. No password or secret is recorded.
+- Exact focused T015 command:
+  ```bash
+  cd bgg-shop-frontend && env -u VITE_API_BASE_URL E2E_OPKEY_ISOLATED=true C03_DISPOSABLE_REVIEW_E2E=true npx playwright test tests/e2e/product-reviews.spec.ts --grep "moderator accepts" --project=chromium --workers=1
+  ```
+- T015 result: **1 passed (8.5s)** in the independent runner; the parent spot-check also observed **1 passed (8.5s)**. The flow submitted a `PENDING` buyer review, loaded it in the moderator queue, accepted it, and observed `status=ACCEPTED`, `publicly_visible=true`, `cache_refresh_pending=false`. Public detail then included the review, with accepted count/average incrementing. Unique data and baseline-derived aggregate assertions support repeatable reruns.
+- No deployment, external service, persistent/default Saleor DB, CI, staging, or production resource was accessed. The preceding contract evidence remains as recorded above; this status update does not claim that those checks were rerun.
+- **Next:** T016, adding Core tests for rejection/restoration transitions and concurrent row-lock serialization. T016–T031 remain unchecked; US2/US3 implementation is authorized but not yet complete.
+- Changed documents: `specs/011-moderate-content-reviews/tasks.md`, `specs/011-moderate-content-reviews/quickstart.md`, and this tracker. No application source, contract, or Compose configuration was changed or committed.
+- Engram persistence was unavailable: no `mem_save` tool is exposed. The observed isolation and local E2E evidence is recorded in this tracker and the spec quickstart.

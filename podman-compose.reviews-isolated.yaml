@@ -1,0 +1,102 @@
+services:
+  db:
+    image: docker.io/library/postgres:15-alpine
+    container_name: bgg_reviews_test_db
+    ports:
+      - "127.0.0.1:55432:5432"
+    environment:
+      POSTGRES_DB: review_test
+      POSTGRES_USER: review_test
+      POSTGRES_PASSWORD: review_test_only
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U review_test -d review_test"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - default
+
+  redis:
+    image: docker.io/library/redis:7-alpine
+    container_name: bgg_reviews_test_redis
+    ports:
+      - "127.0.0.1:56379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+    volumes:
+      - redis_data:/data
+    networks:
+      - default
+
+  api:
+    image: localhost/boardgame-app_api:latest
+    container_name: bgg_reviews_test_api
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:18001:8000"
+    environment:
+      ALLOWED_HOSTS: localhost,127.0.0.1,api
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CORS_ALLOWED_ORIGINS: http://localhost:3000,http://127.0.0.1:3000
+      COUNTRY_MONEY_CODE: ARS
+      DATABASE_URL: postgresql://review_test:review_test_only@db:5432/review_test
+      DEBUG: "true"
+      DEFAULT_FROM_EMAIL: reviews-test@example.test
+      EMAIL_URL: consolemail://
+      FRONTEND_URL: http://localhost:3000
+      MEDIA_ROOT: /app/media
+      MP_ACCESS_TOKEN: reviews-only-placeholder
+      MP_CURRENCY_ID: ARS
+      MP_SANDBOX: "true"
+      OPKEYS_ISSUE_ON_LOGIN: "false"
+      OPKEY_INTERNAL_SECRET: reviews-only-test-opkey
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: reviews-only-insecure-test-key
+      SECRET_KEY_FALLBACKS: "[]"
+    volumes:
+      - ./bgg-shop-core:/app:z
+      - saleor_media:/app/media:z
+    networks:
+      - default
+
+  bff:
+    image: localhost/boardgame-app_bff:latest
+    container_name: bgg_reviews_test_bff
+    depends_on:
+      api:
+        condition: service_started
+    ports:
+      - "127.0.0.1:5001:5000"
+    environment:
+      FLASK_ENV: development
+      OPKEY_INTERNAL_SECRET: reviews-only-test-opkey
+      PORT: "5000"
+      REDIS_URL: redis://redis:6379/2
+      SALEOR_BASE_URL: http://api:8000
+      SALEOR_GRAPHQL_URL: http://api:8000/graphql/
+      SECRET_KEY: reviews-only-insecure-test-key
+    volumes:
+      - ./bgg-shop-bff:/app:z
+    networks:
+      - default
+
+volumes:
+  postgres_data:
+    name: bgg_reviews_test_postgres_data
+  redis_data:
+    name: bgg_reviews_test_redis_data
+  saleor_media:
+    name: bgg_reviews_test_media
+
+networks:
+  default:
+    name: bgg_reviews_test_network
