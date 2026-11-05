@@ -1,7 +1,7 @@
 # Implementation Plan: CU-A02 — Sales Metrics & Reports (MVP)
 
 **Feature dir**: `specs/010-sales-metrics-reports` | **Date**: 2026-11-02 | **Source**: `CasosDeUso.md` (CU-A02)
-**Status**: Draft. Core and BFF contracts are defined and structurally validated locally; application implementation is not started. The BFF service-test runner has a failing final run, recorded in `tasks.md`.
+**Status**: Implemented and locally verified on 2026-11-05. Core, BFF, generated frontend types, the admin dashboard, and the isolated OpKey sales E2E are implemented. Core touched-area tests passed (180); frontend lint, build and Vitest passed (212), and the isolated OpKey Playwright suite passed (10). The full BFF suite still has 12 unrelated legacy service-test failures; focused sales/admin tests passed (52). See `tasks.md` for exact commands and limitations. No CI or non-local deployment was run.
 
 ## Summary
 
@@ -71,8 +71,8 @@ The contract step includes both `adminSalesMetrics` and `adminSalesCategories` i
 2. **Core (TDD)**: resolver with staff/superuser guard and parameterized SQL aggregates (no string-built SQL). Tests on disposable PostgreSQL: range boundaries `[from, to)`, non-paid exclusion, filter consistency, top-10 tie-break, dispatch-status boundaries (23h59m, 24h, 71h59m, 72h), empty range, invalid input, FORBIDDEN/UNAUTHENTICATED.
 3. **BFF (TDD)**: `admin_sales_controller.py`, input validation, error mapping without upstream detail, negative tests proving no leakage of exceptions, traces, internal URLs or credentials, non-cacheable headers.
 4. **Frontend**: regenerate types, `admin/sales` page, filters, chart, states; Vitest for states and filter wiring.
-5. **Verify locally**: Core + BFF pytest, frontend lint/build/Vitest, one Playwright admin flow (login → dashboard → filter → values). Compare totals against a direct SQL query on seeded local data.
-6. **Document**: update BFF/Core READMEs; keep a task ledger (`tasks.md`) recording only checks actually executed and their results.
+5. **Verify locally**: Core + BFF pytest, frontend lint/build/Vitest, and one Playwright admin flow on a disposable local PostgreSQL database. The isolated E2E runner seeds and cleans a deterministic paid order; the dashboard, filtered BFF response, and direct SQL totals must agree. Never use the active `saleor` database for this fixture.
+6. **Document**: update BFF, Core and Frontend READMEs; keep a task ledger (`tasks.md`) recording only checks actually executed and their results.
 
 ## Risks & Mitigations
 
