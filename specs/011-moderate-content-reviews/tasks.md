@@ -1,7 +1,7 @@
 # Tasks: CU-A03 — Moderate Content and Reviews
 
 **Input**: `specs/011-moderate-content-reviews/{spec,plan,research,data-model,quickstart}.md` and the two planning drafts in `contracts/`.
-**Planning status**: T001–T015 are recorded complete below, including T012 independent review and the isolated T015 local journey. T006's PostgreSQL migration integration tests previously passed against an isolated disposable loopback database. T008–T010 tests were authored and their expected RED was observed; T011's focused Core review tests now pass. T016–T031 remain pending, with T016 next. The approved Core and BFF definitions are promoted and locally validated.
+**Planning status**: T001–T016 are recorded complete below, including T012 independent review, the isolated T015 local journey, and T016 Core test authoring with its expected RED result. T006's PostgreSQL migration integration tests previously passed against an isolated disposable loopback database. T008–T010 tests were authored and their expected RED was observed; T011's focused Core review tests now pass. T017–T031 remain pending. The approved Core and BFF definitions are promoted and locally validated.
 **Scope**: Local project only. Do not run staging, production, CI, or remote validation.
 **Tests**: Included because the specification and quickstart require independent functional evidence.
 
@@ -62,8 +62,8 @@ Tasks are dependency-ordered and grouped by user story. Project ownership is sta
 
 ### Tests — write before implementation
 
-- [ ] T016 [P] [US2] bgg-shop-core: Add tests for pending-to-rejected, accepted-to-rejected, rejected-to-accepted, same-state idempotent success, no return to pending, and concurrent row-lock serialization/last-serialized-action-wins in `bgg-shop-core/tests/test_graphql_reviews.py` (depends on T015).
-- [ ] T017 [P] [US2] bgg-shop-bff: Add tests for reject/restore mapping, idempotent success, 404/409 mapping (409 only for a genuinely invalid transition), sanitized errors, and post-commit cache retry/pending-success behavior in `bgg-shop-bff/tests/test_reviews.py` (depends on T015).
+- [x] T016 [P] [US2] bgg-shop-core: Add tests for pending-to-rejected, accepted-to-rejected, rejected-to-accepted, same-state idempotent success, no return to pending, and concurrent row-lock serialization/last-serialized-action-wins in `bgg-shop-core/tests/test_graphql_reviews.py` (depends on T015). Test authoring is complete; expected RED is recorded below. PostgreSQL concurrency execution remains pending/skipped until a guarded disposable `CREDIT_TEST_POSTGRES_DSN` is available.
+- [x] T017 [P] [US2] bgg-shop-bff: Add tests for reject/restore mapping, idempotent success, 404/409 mapping (409 only for a genuinely invalid transition), sanitized errors, and post-commit cache retry/pending-success behavior in `bgg-shop-bff/tests/test_reviews.py` (depends on T015). Test-authoring commit: BFF `9fbd690`. Focused run and parent spot-check both observed **6 expected failures, 42 passed, 0 skipped**; failures isolate the missing REJECT/DELETE cache invalidation and pending-success behavior, assigned to T020. No implementation was changed by T017.
 - [ ] T018 [P] [US2] bgg-shop-frontend: Add tests for reject and restore actions, resulting status display, failure feedback, and refreshed public-state indication in `bgg-shop-frontend/src/admin/reviews/ReviewsPanel.test.tsx` (depends on T015).
 
 ### Implementation
@@ -153,4 +153,13 @@ T013: Frontend panel implementation
 
 ## T002–T004 Contract Evidence
 
-The approved draft baseline passed syntax/structure checks before promotion. Exact baseline and canonical validator commands and observed output are recorded in `odd/tasks/011-moderate-content-reviews.md`. Both canonical validations passed. T005 tests are written and their expected RED is recorded in `odd/tasks/011-moderate-content-reviews.md`; T006–T007 and frontend type generation remain complete as recorded above. T011's focused verification and T012's independent review are recorded in `odd/tasks/011-moderate-content-reviews.md`. T015a/T015 are complete with local-only evidence; T016–T031 remain pending, with T016 next. No remote or deployment checks were performed.
+The approved draft baseline passed syntax/structure checks before promotion. Exact baseline and canonical validator commands and observed output are recorded in `odd/tasks/011-moderate-content-reviews.md`. Both canonical validations passed. T005 tests are written and their expected RED is recorded in `odd/tasks/011-moderate-content-reviews.md`; T006–T007 and frontend type generation remain complete as recorded above. T011's focused verification and T012's independent review are recorded in `odd/tasks/011-moderate-content-reviews.md`. T015a/T015 are complete with local-only evidence; T016 test authoring is complete with expected RED, while its PostgreSQL concurrency integration execution remains pending/skipped until a guarded disposable DSN is available. T017–T031 remain pending. No remote or deployment checks were performed.
+
+## T016 Core Test-Authoring Result
+
+- Traceability: `specs/011-moderate-content-reviews/spec.md` User Story 2 and FR-004/FR-005; task T016; Core tests in `bgg-shop-core/tests/test_graphql_reviews.py`. Production implementation in `bgg-shop-core/saleor/graphql/api.py` was unchanged.
+- Added coverage for pending-to-rejected, accepted-to-rejected, rejected-to-accepted, same-state idempotency, rejecting `PENDING` as an action, and a guarded concurrent row-lock/last-serialized-action-wins scenario.
+- Exact command: `cd bgg-shop-core && python -m pytest tests/test_graphql_reviews.py`
+- Result, independently run and parent spot-checked: **4 failed, 34 passed, 4 skipped, 1 warning in 2.32s**. The four expected RED cases were pending-to-rejected, accepted-to-rejected, rejected-to-accepted, and rejected-again idempotency.
+- The three PostgreSQL migration integration tests and the new concurrency integration test were skipped because `CREDIT_TEST_POSTGRES_DSN` was unset. PostgreSQL concurrency execution remains pending until it can run against a guarded disposable DSN. No `saleor_db` access occurred.
+- T016 work-unit commit: Core `1e64711` (`test(core): cover review rejection and restoration`). This commit contains test authoring only; it does not establish that the rejection/restoration implementation is complete or that the tests pass.

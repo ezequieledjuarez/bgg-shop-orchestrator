@@ -99,7 +99,7 @@ Canonical validation, run after promotion:
 - BFF commit: `c4358ed` (`feat(bff): add review moderation queue and accept adapter`), containing only the six T012 BFF source/test files.
 
 ## Next Step
-Historical next-step note: after T012 implementation, the independent BFF verification and T015 local integration were still pending. Both have since completed, as recorded below. Current next task: T016. Do not treat skipped Core migration cases as validation in the T011 test run.
+Historical next-step note: after T012 implementation, the independent BFF verification and T015 local integration were still pending. Both have since completed, as recorded below. T016 Core test authoring has also since completed with expected RED; the next tasks are T017/T018. Do not treat skipped Core migration cases as validation in the T011 test run.
 
 ## T008 Core Test Evidence (2026-11-05)
 - Added focused GraphQL tests in `bgg-shop-core/tests/test_graphql_reviews.py` for active staff and superuser identities; unauthenticated, inactive, non-admin, and operation-key-only/no-user rejection; status filtering; bounded pagination; stable order and game/review context; empty queues; pending acceptance; and accepted/non-deleted public detail aggregation.
@@ -131,7 +131,7 @@ Historical next-step note: after T012 implementation, the independent BFF verifi
 - Runtime schema check: moderation type fields/enums and `adminReviews`/`moderateReview` fields and arguments matched `bgg-shop-core/specs/schema.graphql`; no canonical contract file was edited.
 - Independent T011 review passed: focused Core tests reported 32 passed and 3 migration tests skipped in this run; compile check passed. The review confirmed authorization, parameterized queue filtering, pagination, ordering, row lock, idempotent accept, and contract alignment. Reject/restore/delete belong to later tasks.
 - Independent frontend verification passed: the six focused panel tests, TypeScript no-emit check, and frontend build all succeeded.
-- Historical note: an earlier BFF writer launch failed before execution due unavailable agent routing. T012 was subsequently implemented, independently reviewed, and committed as `c4358ed`; T016 is now the next task.
+- Historical note: an earlier BFF writer launch failed before execution due unavailable agent routing. T012 was subsequently implemented, independently reviewed, and committed as `c4358ed`; T017/T018 are now next for BFF and Frontend test authoring.
 
 ## T015a / T015 Isolated Local Result (2026-11-05)
 
@@ -147,6 +147,28 @@ Historical next-step note: after T012 implementation, the independent BFF verifi
 - T015 result: **1 passed (8.5s)** in the independent runner; the parent spot-check also observed **1 passed (8.5s)**. The flow submitted a `PENDING` buyer review, loaded it in the moderator queue, accepted it, and observed `status=ACCEPTED`, `publicly_visible=true`, `cache_refresh_pending=false`. Public detail then included the review, with accepted count/average incrementing. Unique data and baseline-derived aggregate assertions support repeatable reruns.
 - T015 work-unit commits: Frontend `aa463fe` (`test(frontend): cover review moderation acceptance`) and orchestrator `e383f95` (`test(spec): verify isolated review moderation flow`).
 - No deployment, external service, persistent/default Saleor DB, CI, staging, or production resource was accessed. The preceding contract evidence remains as recorded above; this status update does not claim that those checks were rerun.
-- **Next:** T016, adding Core tests for rejection/restoration transitions and concurrent row-lock serialization. T016–T031 remain unchecked; US2/US3 implementation is authorized but not yet complete.
+- **Next:** T017 and T018, authoring BFF and Frontend tests. T017–T031 remain unchecked; US2/US3 implementation is authorized but not yet complete.
 - Changed documents: `specs/011-moderate-content-reviews/tasks.md`, `specs/011-moderate-content-reviews/quickstart.md`, and this tracker. No application source, contract, or Compose configuration was changed or committed.
 - Engram persistence was unavailable: no `mem_save` tool is exposed. The observed isolation and local E2E evidence is recorded in this tracker and the spec quickstart.
+
+## T016 Core Test-Authoring Result
+
+- Status: T016 test authoring is complete; this does not mean the production rejection/restoration implementation is complete. T017/T018 (BFF and Frontend test authoring) are next. See `specs/011-moderate-content-reviews/tasks.md` for the task ledger.
+- Traceability: `specs/011-moderate-content-reviews/spec.md` User Story 2 and FR-004/FR-005; Core implementation target `bgg-shop-core/saleor/graphql/api.py` (unchanged); tests `bgg-shop-core/tests/test_graphql_reviews.py`.
+- Added tests cover pending-to-rejected, accepted-to-rejected, rejected-to-accepted, idempotent same-state behavior, rejecting `PENDING` as an action, and a guarded concurrent row-lock/last-serialized-action-wins scenario.
+- Exact command: `cd bgg-shop-core && python -m pytest tests/test_graphql_reviews.py`
+- Result, independently run and parent spot-checked: **4 failed, 34 passed, 4 skipped, 1 warning in 2.32s**. The four expected failures were pending-to-rejected, accepted-to-rejected, rejected-to-accepted, and rejected-again idempotency; these are expected RED because production code was unchanged.
+- The three PostgreSQL migration integration tests and the new concurrency integration test were skipped because `CREDIT_TEST_POSTGRES_DSN` was unset. Keep the concurrency integration test pending/skipped until it can run with a guarded disposable DSN. No `saleor_db` access occurred.
+- T016 work-unit commit: Core `1e64711` (`test(core): cover review rejection and restoration`); it contains test authoring only.
+- No functional tests were rerun for this tracker update. No service code, contracts, quickstart, or files beyond the task ledger and this tracker were changed.
+
+## T017 BFF Test-Authoring Result
+
+- Status: T017 test authoring is complete; the RED is expected and T020 still owns the missing behavior. T018 Frontend test authoring remains pending.
+- Traceability: `specs/011-moderate-content-reviews/spec.md` User Story 2 and FR-004/FR-005; BFF implementation target `bgg-shop-bff/src/controllers/reviews_controller.py` (unchanged); tests `bgg-shop-bff/tests/test_reviews.py`.
+- Added coverage for REJECT and restore-as-ACCEPT request/response mapping, same-state success, explicit Core `REVIEW_NOT_FOUND`/`INVALID_TRANSITION` mapping, non-transition errors remaining sanitized 502s, and post-commit cache retry/pending-success behavior for ACCEPT, REJECT, and DELETE. Retry assertions verify the Core mutation runs only once.
+- Exact command: `cd bgg-shop-bff && PYTHONPATH=. pytest -q tests/test_reviews.py`
+- Result, writer run and parent spot-check: **6 failed, 42 passed, 0 skipped, 45 warnings**. All six expected RED failures concern REJECT/DELETE response/cache invalidation; restore mapping, explicit 404/409 mapping, sanitized errors, and ACCEPT cache retry cases passed.
+- No remote services or shared/default database were contacted. `git diff --check` passed before the BFF test commit.
+- T017 work-unit commit: BFF `9fbd690` (`test(bff): cover review rejection and cache retries`), containing only `bgg-shop-bff/tests/test_reviews.py`.
+- The `.atl/skill-registry.md` file is absent in this repository; no project skill index was available. The BFF Test Generator guidance in `bgg-shop-bff/.github/agents/test-generator-agent.md` was followed.
