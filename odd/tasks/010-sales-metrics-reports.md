@@ -44,4 +44,5 @@ No resolver, controller, database, or frontend implementation is authorized in t
 
 - Current state: contract work is complete; no resolver, controller, database, or frontend implementation is included here.
 - Checks: PyYAML/OpenAPI and graphql-core/SDL parsing and shape assertions passed. `bash bgg-shop-bff/scripts/run_contracts.sh` exited 1 with 9 failed and 7 passed service tests, including unrelated `allow_redirects` mock mismatches and undefined `op_key` failures; full details are in the global evidence ledger.
+- Work-unit commits: orchestrator `4ebff3883e85bc222ccba260889e2138729f14df`; Core `b98a131da4ead699952e601f3af4f15e0a8416d6`; BFF `9c3924a7e290f4d92011685baf16970bfa078d04`.
 - Next step: begin Core implementation task C-1 in a separate work unit.
