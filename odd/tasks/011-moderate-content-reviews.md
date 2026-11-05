@@ -172,3 +172,13 @@ Historical next-step note: after T012 implementation, the independent BFF verifi
 - No remote services or shared/default database were contacted. `git diff --check` passed before the BFF test commit.
 - T017 work-unit commit: BFF `9fbd690` (`test(bff): cover review rejection and cache retries`), containing only `bgg-shop-bff/tests/test_reviews.py`.
 - The `.atl/skill-registry.md` file is absent in this repository; no project skill index was available. The BFF Test Generator guidance in `bgg-shop-bff/.github/agents/test-generator-agent.md` was followed.
+
+## T018 Frontend Test-Authoring Result
+
+- Status: T018 test authoring is complete; its expected RED is assigned to T021. T019/T020 Core and BFF implementation remain pending.
+- Traceability: `specs/011-moderate-content-reviews/spec.md` User Story 2; Frontend implementation target `bgg-shop-frontend/src/admin/reviews/ReviewsPanel.tsx` (unchanged); tests `bgg-shop-frontend/src/admin/reviews/ReviewsPanel.test.tsx`.
+- Added MSW state transitions and tests for rejection of an accepted review, restoration of a rejected review, resulting status display, refreshed public detail/list/count/average, and safe failure feedback.
+- Exact command: `cd bgg-shop-frontend && npm run test -- --run src/admin/reviews/ReviewsPanel.test.tsx`
+- Result, writer run and parent spot-check: **3 failed, 6 passed**. All three expected failures report the currently missing accessible Reject/Accept controls for rejected-state workflows; existing acceptance, pending cache notice, loading/error/empty states pass.
+- `git diff --check` passed before the Frontend test commit. The tests use local MSW only; no remote service or shared/default database was contacted.
+- T018 work-unit commit: Frontend `b23d87c` (`test(frontend): cover review rejection and restoration`), containing only `src/admin/reviews/ReviewsPanel.test.tsx`.
