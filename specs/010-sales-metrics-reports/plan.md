@@ -41,7 +41,7 @@ Read-only admin dashboard: pick a date range and optional category/product filte
   - `rejected`, `cancelled` and `paid_stock_conflict` have no dispatch status; they appear only in `ordersByPaymentStatus`.
   - The status is derived from the time of the query and is not persisted; `pickup` orders follow the same rule.
 - Date range: timezone-aware ISO instants, `from < to`, maximum 366 days; invalid input fails with `extensions.code INVALID` + `field`.
-- Date-time bounds are normalized to UTC and interpreted as `[from, to)`; when both bounds are omitted, the range defaults to the last 30 days.
+- Callers must provide both `from` and `to`, or omit both. If exactly one is supplied, return `INVALID` and set `extensions.field` to the missing bound; if both are omitted, use the last 30 days. Bounds are normalized to UTC and interpreted as `[from, to)`.
 - The categories operation returns distinct stored `product_boardgame.category` strings, requires staff or superuser access, and is non-cacheable.
 - Money: Decimal end to end, ARS, serialized as in existing contracts.
 - Default range if omitted: last 30 days.
@@ -58,6 +58,7 @@ Read-only admin dashboard: pick a date range and optional category/product filte
 7. **Date semantics (document in the endpoint description)**: revenue and `ordersCount` use `paid_at`; payment/dispatch status counts use `created_at`. An order created outside the range and paid inside it appears in revenue but not in status counts.
 8. **Gross revenue**: sum of line `subtotal` (historical price at purchase); it ignores coupons, promotions and credit, so it may differ from `purchase_order.total`. State this in the contract.
 9. **UI placement**: a section inside the existing admin panel (`AdminRouter.tsx`).
+10. **Paired date bounds**: callers provide both `from` and `to`, or omit both; a one-sided range returns `INVALID` with `extensions.field` identifying the missing bound. Omitting both defaults to the last 30 days.
 
 ## Unresolved Contract Decisions
 

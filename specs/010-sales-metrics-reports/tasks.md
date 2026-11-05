@@ -10,20 +10,22 @@ Format: `- [ ] ID [P] Description (path)`. `[P]` = parallelizable. Mark a task d
 - [x] X-2 Add `GET /api/v1/admin/sales-metrics` to `bgg-shop-bff/specs/openapi.yaml` with optional `from`/`to`, repeated `category`/`product_id`, responses 200/400/401/403, `Cache-Control: no-store`, and planned status; document the business rules from X-1.
 - [x] X-3 Add `GET /api/v1/admin/sales-metrics/categories` (distinct stored category values; 200/401/403/502; `Cache-Control: no-store`; planned) to the OpenAPI and matching `adminSalesCategories` query to the SDL with staff/superuser access and authorization error semantics.
 - [x] X-4 Validate both contract documents and run `bgg-shop-bff/scripts/run_contracts.sh`; record the contract assertions and service-test result separately. Structural contract assertions passed; unrelated BFF service tests failed (see Evidence Ledger).
+- [x] X-5 Document that callers provide both `from` and `to`, or omit both; a one-sided range returns `INVALID` with `extensions.field` set to the missing bound, and omitting both defaults to the last 30 days.
 
 For future service work, check both BFF OpenAPI routes and Core GraphQL operations for existing or required contract definitions before implementation.
 
 ## Core (`bgg-shop-core`)
 
 - [x] C-1 Write failing PostgreSQL tests in `bgg-shop-core/tests/test_admin_sales_metrics_postgres.py` (disposable DB), covering range/revenue rules, exact filters independently and together, top-10 tie-breaks, UTC daily aggregation, dispatch boundaries/status exclusions, status dates, validation, authorization, and category retrieval. (depends on X-4; expected RED observed)
-- [ ] C-2 Implement the resolver for `adminSalesMetrics` in `bgg-shop-core/saleor/graphql/api.py` (or a new module imported there) with staff/superuser guard, input validation and parameterized SQL (no string-built SQL, `Decimal` throughout). Make the metrics and filter cases in C-1 pass; category-query cases follow in C-3. (depends on C-1)
+- [x] C-1a Add PostgreSQL GraphQL tests for `from`-only (missing `to`) and `to`-only (missing `from`), explicitly passing `None` for each omitted bound; observe expected RED before resolver implementation.
+- [ ] C-2 Implement the resolver for `adminSalesMetrics` in `bgg-shop-core/saleor/graphql/api.py` (or a new module imported there) with staff/superuser guard, input validation and parameterized SQL (no string-built SQL, `Decimal` throughout). Make the metrics and filter cases in C-1/C-1a pass; category-query cases follow in C-3. (depends on C-1 and C-1a)
 - [ ] C-3 Implement `adminSalesCategories` resolver and test. (depends on X-3)
 - [ ] C-4 Check query plan locally with `EXPLAIN` on seeded data; add an index migration only if justified, as a separate reviewed step. Record result either way.
 - [ ] C-5 Run Core test suite for touched areas and record results.
 
 ## BFF (`bgg-shop-bff`)
 
-- [ ] B-1 Write failing tests in `bgg-shop-bff/tests/test_admin_sales_metrics.py`: auth required (401), non-admin (403), param validation (invalid/missing-tz dates, `from >= to`, >366 days, non-integer `product_id`), forwarding of repeated filters, `Cache-Control: no-store`, and negative tests proving no leakage of upstream exceptions, traces, internal URLs or credentials. (depends on X-4)
+- [ ] B-1 Write failing tests in `bgg-shop-bff/tests/test_admin_sales_metrics.py`: auth required (401), non-admin (403), param validation (invalid/missing-tz dates, one-sided `from`/`to`, `from >= to`, >366 days, non-integer `product_id`), forwarding of repeated filters, `Cache-Control: no-store`, and negative tests proving no leakage of upstream exceptions, traces, internal URLs or credentials. (depends on X-5)
 - [ ] B-2 Add proxy call in `bgg-shop-bff/src/proxy.py` and service in `bgg-shop-bff/src/services.py`, following `list_admin_audit`. (depends on B-1)
 - [ ] B-3 Add `bgg-shop-bff/src/controllers/admin_sales_controller.py` with validation and error mapping; register it where other admin controllers are registered. Make B-1 pass. (depends on B-2)
 - [ ] B-4 Add the categories endpoint with tests. (depends on X-3)
@@ -47,7 +49,7 @@ For future service work, check both BFF OpenAPI routes and Core GraphQL operatio
 
 ## Dependencies
 
-X-1..X-3 → X-4 → (C-1 → C-2, B-1 → B-2 → B-3, F-1 → F-2 → F-3) → F-5 → V-*.
+X-1..X-3 → X-4 → X-5 → (C-1/C-1a → C-2, B-1 → B-2 → B-3, F-1 → F-2 → F-3) → F-5 → V-*.
 Core, BFF and Frontend tracks can run in parallel after X-4; the BFF integration check against real Core and E2E need C-2 and B-3.
 
 ## Evidence Ledger
@@ -63,3 +65,8 @@ Core, BFF and Frontend tracks can run in parallel after X-4; the BFF integration
 | C-1 | `pytest -q tests/test_admin_sales_metrics_postgres.py` from Core | ERROR during collection: `ModuleNotFoundError: No module named 'saleor'`; repository root was not on the entrypoint import path | 2026-11-05 |
 | C-1 | `PYTHONPATH=. pytest -q tests/test_admin_sales_metrics_postgres.py` from Core | 18 skipped, 1 warning: `SALES_METRICS_TEST_POSTGRES_DSN` is absent; no behavior-test RED observed and no database connection attempted | 2026-11-05 |
 | C-1 | `PYTHONPATH=. python -m pytest -q -p no:cacheprovider --tb=short tests/test_admin_sales_metrics_postgres.py` with dedicated temporary PostgreSQL 15 container bound to `127.0.0.1` | 18 failed as expected: Graphene `Query` lacks `adminSalesMetrics` and `adminSalesCategories`; tests reached GraphQL validation and did not connect to the active `saleor` database. Temporary container removal verified. | 2026-11-05 |
+| X-5 | PyYAML parse and OpenAPI paired-bound assertions; graphql-core parse and SDL paired-bound assertions | PASS: both contracts parse; paired semantics, missing-bound wording, optional parameters, and operation arguments verified | 2026-11-05 |
+| C-1a | `python -m py_compile bgg-shop-core/tests/test_admin_sales_metrics_postgres.py` | PASS | 2026-11-05 |
+| C-1a | `PYTHONPATH=. python -m pytest -q -p no:cacheprovider --tb=short tests/test_admin_sales_metrics_postgres.py` with a fresh cached `postgres:15-alpine` container bound to `127.0.0.1` | EXPECTED RED: 20 failed, 1 warning in 5.35s; Graphene lacks `adminSalesMetrics` and `adminSalesCategories`; no collection or database setup errors. Container `sales_metrics_test_132aad8945184637bdc7a7913aa4dd5c` removed and absence verified. | 2026-11-05 |
+| C-1a | Parent rerun of `PYTHONPATH=. python -m pytest -q -p no:cacheprovider --tb=short tests/test_admin_sales_metrics_postgres.py` with a fresh Podman PostgreSQL 15 container | EXPECTED RED: 20 failed, 1 warning in 5.23s for missing Graphene query fields and resulting error assertions; container cleanup passed. | 2026-11-05 |
+| C-1a | Delegated execution-verifier rerun using Podman | NOT ACCEPTED as behavior evidence: reported 20 setup errors in 1.59s without a traceback. Parent rerun immediately afterward reproduced the expected 20 GraphQL field failures with successful setup and cleanup. | 2026-11-05 |
