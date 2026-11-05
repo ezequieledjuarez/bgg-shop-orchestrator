@@ -20,7 +20,7 @@ For future service work, check both BFF OpenAPI routes and Core GraphQL operatio
 - [x] C-1a Add PostgreSQL GraphQL tests for `from`-only (missing `to`) and `to`-only (missing `from`), explicitly passing `None` for each omitted bound; observe expected RED before resolver implementation.
 - [x] C-2 Implement the resolver for `adminSalesMetrics` in `bgg-shop-core/saleor/graphql/api.py` with staff/superuser guard, input validation and parameterized SQL (no interpolated user values; Decimal database results retained through Graphene serialization). Metrics and filter cases in C-1/C-1a pass. (depends on C-1 and C-1a)
 - [x] C-3 Implement `adminSalesCategories` resolver and test. (depends on X-3)
-- [ ] C-4 Check query plan locally with `EXPLAIN` on seeded data; add an index migration only if justified, as a separate reviewed step. Record result either way.
+- [x] C-4 Review local query plans on seeded data. No index migration was justified by this synthetic workload; revisit only with representative volume/latency requirements.
 - [ ] C-5 Run Core test suite for touched areas and record results.
 
 ## BFF (`bgg-shop-bff`)
@@ -61,6 +61,7 @@ Core, BFF and Frontend tracks can run in parallel after X-4; the BFF integration
 | C-2 | Parent rerun of the focused Core metrics/filter suite against a fresh Podman PostgreSQL 15 container | PASS: 17 passed, 4 deselected, 1 Django warning in 4.20s. `py_compile` and `git diff --check` passed. The container remained after the command despite its exit trap; it was removed explicitly and absence was verified. | 2026-11-05 |
 | C-2 | Work-unit commits | Core `b447261a93d6f127963646ea24874ea9a9eb487d`; orchestrator `717be40568313763f6c09f94f64aa8455871fe6c` | 2026-11-05 |
 | C-2 | `PYTHONPATH=. python -m pytest -q -p no:cacheprovider --tb=short tests/test_graphql_products.py::test_generated_schema_matches_reference_sdl` | FAIL: runtime/SDL parity differs only because `adminSalesCategories` remains unimplemented for C-3; targeted comparison confirmed the C-2 metrics operation, arguments, payload fields, and description match. | 2026-11-05 |
+| C-4 | `EXPLAIN (ANALYZE, BUFFERS)` for paid_at range, category/product-filtered metrics, and created_at status counts on 100,000 synthetic orders/lines and 500 products | PASS: plans completed in 28–46 ms; combined category/product filter matched 12 rows and scanned lines sequentially. No index justified without representative workload/latency requirements; temporary DB/container removed, active `saleor` untouched. | 2026-11-05 |
 | X-1..X-3 | PyYAML parse and OpenAPI route/schema/parameter/response assertions; `graphql-core` parse and SDL operation/type assertions | PASS: `OPENAPI_PARSE_AND_ASSERTIONS=PASS`; `GRAPHQL_PARSE_AND_ASSERTIONS=PASS` | 2026-11-05 |
 | X-4 | Direct `scripts/run_contracts.sh` from BFF | EXIT 126: script is not executable; rerun through Bash | 2026-11-05 |
 | X-4 | `bash scripts/run_contracts.sh` after initial SDL update | EXIT 0: command reported pass; script runs `pytest tests/test_services_* -q` rather than schema parsers | 2026-11-05 |

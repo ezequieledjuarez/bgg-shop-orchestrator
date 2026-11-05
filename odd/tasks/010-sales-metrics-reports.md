@@ -81,9 +81,9 @@ No controller, database schema, migration, or frontend implementation is include
 
 No controller, database schema, migration, or frontend implementation is included in C-3.
 
-## Current Work Unit: Query Plan Review
+## Completed Work Unit: Query Plan Review
 
-- [ ] C-4 Review local EXPLAIN plans on synthetic seeded data and record whether a query index is justified.
+- [x] C-4 Review local EXPLAIN plans on synthetic seeded data and record whether a query index is justified.
 
 ### Allowed edit surfaces for C-4
 
@@ -97,7 +97,32 @@ No application code, database schema, index, or migration is included in C-4. An
 
 - Route: direct local query-plan review using the cached PostgreSQL image and synthetic data in a disposable loopback-only database.
 - Risk: medium; seeded data and EXPLAIN run only inside the temporary database, never the active `saleor` database.
-- Verification: run `EXPLAIN (ANALYZE, BUFFERS)` for the metrics range and category filter shapes, destroy the temporary container, and record plan findings without creating indexes.
+- Verification: `EXPLAIN (ANALYZE, BUFFERS)` covered unfiltered paid-at range, combined category/product filtering, and created-at status counts over 100,000 synthetic orders/lines and 500 products. All completed in 28–46 ms; the selective filter matched 12 rows but scanned purchase-order lines sequentially. No index was added because the synthetic data does not establish a representative workload or latency target. Temporary DB/container removed.
+
+No application code, database schema, index, or migration was added in C-4. Any future index change is a separately reviewed task.
+
+## Current Work Unit: BFF Metrics Tests
+
+- [ ] B-1 Write BFF tests for authentication, paired/range validation, repeated-filter forwarding, `no-store`, and public error redaction.
+
+### Allowed edit surfaces for B-1
+
+- `bgg-shop-bff/tests/test_admin_sales_metrics.py`
+- `bgg-shop-bff/src/proxy.py`
+- `bgg-shop-bff/src/services.py`
+- `bgg-shop-bff/src/controllers/admin_sales_controller.py`
+- `bgg-shop-bff/src/controllers/__init__.py`
+- `bgg-shop-bff/specs/010-sales-metrics-reports-tasks.md`
+- `specs/010-sales-metrics-reports/tasks.md`
+- `odd/tasks/010-sales-metrics-reports.md`
+
+No frontend or Core resolver changes are included in B-1.
+
+### B-1 routing and verification
+
+- Route: delegated BFF implementation; test setup, proxy/service/controller wiring, and public error behavior span files.
+- Risk: high; BFF authentication and public error-redaction behavior.
+- Verification: run focused BFF tests and contract validation locally; distinguish existing service-suite failures from new failures.
 
 ### C-3 routing and verification
 
@@ -129,8 +154,9 @@ No application code, database schema, index, or migration is included in C-4. An
 - [x] C-1a Add tests for one-sided date ranges and observe expected RED.
 - [x] C-2 Implement the Core metrics resolver and make its C-1 metrics/filter cases pass.
 - [x] C-3 Implement the Core categories resolver and make its retrieval/authorization cases pass.
-- [ ] C-4 Review the local query plan and record whether an index is justified.
-- [ ] B-1..B-6 Implement and validate the BFF endpoints.
+- [x] C-4 Review local EXPLAIN plans; no index justified by synthetic workload.
+- [ ] B-1 Write BFF sales-metrics tests.
+- [ ] B-2..B-6 Implement and validate the BFF endpoints.
 - [ ] F-1..F-6 Implement and validate the admin dashboard.
 - [ ] V-1..V-3 Verify local results, security, and documentation.
 
