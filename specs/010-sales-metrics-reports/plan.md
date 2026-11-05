@@ -1,7 +1,7 @@
 # Implementation Plan: CU-A02 — Sales Metrics & Reports (MVP)
 
 **Feature dir**: `specs/010-sales-metrics-reports` | **Date**: 2026-11-02 | **Source**: `CasosDeUso.md` (CU-A02)
-**Status**: Draft. No implementation, contract or verification gate is claimed as passed.
+**Status**: Draft. Core and BFF contracts are defined and structurally validated locally; application implementation is not started. The BFF service-test runner has a failing final run, recorded in `tasks.md`.
 
 ## Summary
 
@@ -25,6 +25,7 @@ Read-only admin dashboard: pick a date range and optional category/product filte
    - `revenueByDay[]` (series for the chart).
 2. Dashboard screen: date range + category/product filters, three summary blocks, loading/error/empty/success states, keyboard-accessible controls.
 3. One simple chart (revenue per day) using native SVG/CSS; no chart library.
+4. Category filter options retrieved from distinct stored category strings through `adminSalesCategories` and its BFF endpoint.
 
 **Out (deferred)**: CSV/PDF export, saved reports, comparisons with prior periods, margin/profit, customer analytics, real-time updates, caching, role granularity beyond staff/superuser.
 
@@ -40,6 +41,8 @@ Read-only admin dashboard: pick a date range and optional category/product filte
   - `rejected`, `cancelled` and `paid_stock_conflict` have no dispatch status; they appear only in `ordersByPaymentStatus`.
   - The status is derived from the time of the query and is not persisted; `pickup` orders follow the same rule.
 - Date range: timezone-aware ISO instants, `from < to`, maximum 366 days; invalid input fails with `extensions.code INVALID` + `field`.
+- Date-time bounds are normalized to UTC and interpreted as `[from, to)`; when both bounds are omitted, the range defaults to the last 30 days.
+- The categories operation returns distinct stored `product_boardgame.category` strings, requires staff or superuser access, and is non-cacheable.
 - Money: Decimal end to end, ARS, serialized as in existing contracts.
 - Default range if omitted: last 30 days.
 
@@ -61,8 +64,9 @@ Read-only admin dashboard: pick a date range and optional category/product filte
 None open.
 
 ## Work Plan (contract first, then implementation)
+The contract step includes both `adminSalesMetrics` and `adminSalesCategories` in Core, and both `GET /api/v1/admin/sales-metrics` and `GET /api/v1/admin/sales-metrics/categories` in BFF; category retrieval is planned, staff/superuser-only, and non-cacheable.
 
-1. **Contracts**: add `adminSalesMetrics` + payload types to `schema.graphql`; add `GET /api/v1/admin/sales-metrics` to `openapi.yaml` (query params `from`, `to`, repeated `category`, repeated `product_id`; responses 200/400/401/403; `Cache-Control: no-store`; `x-implementation-status: planned`). Run `bgg-shop-bff/scripts/run_contracts.sh`.
+1. **Contracts**: add `adminSalesMetrics` and `adminSalesCategories` + payload types to Core `schema.graphql`; add `GET /api/v1/admin/sales-metrics` and `GET /api/v1/admin/sales-metrics/categories` to BFF `openapi.yaml`. Validate both contract documents' structure and record the result of `bgg-shop-bff/scripts/run_contracts.sh` separately, since that script runs BFF service tests rather than contract parsers.
 2. **Core (TDD)**: resolver with staff/superuser guard and parameterized SQL aggregates (no string-built SQL). Tests on disposable PostgreSQL: range boundaries `[from, to)`, non-paid exclusion, filter consistency, top-10 tie-break, dispatch-status boundaries (23h59m, 24h, 71h59m, 72h), empty range, invalid input, FORBIDDEN/UNAUTHENTICATED.
 3. **BFF (TDD)**: `admin_sales_controller.py`, input validation, error mapping without upstream detail, negative tests proving no leakage of exceptions, traces, internal URLs or credentials, non-cacheable headers.
 4. **Frontend**: regenerate types, `admin/sales` page, filters, chart, states; Vitest for states and filter wiring.
