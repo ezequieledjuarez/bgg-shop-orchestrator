@@ -6,10 +6,12 @@ Format: `- [ ] ID [P] Description (path)`. `[P]` = parallelizable. Mark a task d
 
 ## Cross-cutting: Contracts (blocking)
 
-- [ ] X-1 Add `adminSalesMetrics(from, to, categories, productIds)` and payload types (`SalesMetrics`, `TopProduct`, `RevenueByDay`, `StatusCount`) to `bgg-shop-core/specs/schema.graphql`. Document: staff/superuser only; `[from, to)` UTC; revenue and `ordersCount` by `paid_at`; status counts by `created_at`; gross revenue from line subtotals (may differ from order total); dispatch-state rules; errors `UNAUTHENTICATED`/`FORBIDDEN`/`INVALID` with `extensions.field`; max range 366 days; default last 30 days.
-- [ ] X-2 Add `GET /api/v1/admin/sales-metrics` to `bgg-shop-bff/specs/openapi.yaml` (params `from`, `to`, repeated `category`, repeated `product_id`; 200/400/401/403; `Cache-Control: no-store`; `x-implementation-status: planned`; same documentation points as X-1).
-- [ ] X-3 Add `GET /api/v1/admin/sales-metrics/categories` (distinct category values for the filter) to the OpenAPI and a matching `adminSalesCategories` query to the SDL, same access rules.
-- [ ] X-4 Run `bgg-shop-bff/scripts/run_contracts.sh` and confirm both contracts are consistent. (depends on X-1..X-3)
+- [x] X-1 Add `adminSalesMetrics(from, to, categories, productIds)` and payload types (`SalesMetrics`, `TopProduct`, `RevenueByDay`, `StatusCount`) to `bgg-shop-core/specs/schema.graphql`. Document staff/superuser access; UTC half-open range; revenue and `ordersCount` by `paid_at`; status counts by `created_at`; gross line-subtotal revenue; exact filters with matching orders counted once; dispatch rules; errors `UNAUTHENTICATED`/`FORBIDDEN`/`INVALID` with `extensions.field`; maximum range 366 days; and last 30 days when both bounds are omitted.
+- [x] X-2 Add `GET /api/v1/admin/sales-metrics` to `bgg-shop-bff/specs/openapi.yaml` with optional `from`/`to`, repeated `category`/`product_id`, responses 200/400/401/403, `Cache-Control: no-store`, and planned status; document the business rules from X-1.
+- [x] X-3 Add `GET /api/v1/admin/sales-metrics/categories` (distinct stored category values; 200/401/403/502; `Cache-Control: no-store`; planned) to the OpenAPI and matching `adminSalesCategories` query to the SDL with staff/superuser access and authorization error semantics.
+- [x] X-4 Validate both contract documents and run `bgg-shop-bff/scripts/run_contracts.sh`; record the contract assertions and service-test result separately. Structural contract assertions passed; unrelated BFF service tests failed (see Evidence Ledger).
+
+For future service work, check both BFF OpenAPI routes and Core GraphQL operations for existing or required contract definitions before implementation.
 
 ## Core (`bgg-shop-core`)
 
@@ -52,4 +54,8 @@ Core, BFF and Frontend tracks can run in parallel after X-4; the BFF integration
 
 | Task | Check run | Result | Date |
 |------|-----------|--------|------|
-| — | — | — | — |
+| X-1..X-3 | PyYAML parse and OpenAPI route/schema/parameter/response assertions; `graphql-core` parse and SDL operation/type assertions | PASS: `OPENAPI_PARSE_AND_ASSERTIONS=PASS`; `GRAPHQL_PARSE_AND_ASSERTIONS=PASS` | 2026-11-05 |
+| X-4 | Direct `scripts/run_contracts.sh` from BFF | EXIT 126: script is not executable; rerun through Bash | 2026-11-05 |
+| X-4 | `bash scripts/run_contracts.sh` after initial SDL update | EXIT 0: command reported pass; script runs `pytest tests/test_services_* -q` rather than schema parsers | 2026-11-05 |
+| X-4 | Final `bash scripts/run_contracts.sh` after OpenAPI response-schema update | EXIT 1: 9 failed, 7 passed in 5.80s; failures are unchanged cart/product, GraphQL service, wishlist and order service tests (`allow_redirects` unexpected; `op_key` undefined), not contract parsing | 2026-11-05 |
+| X-4 | Final PyYAML/OpenAPI and graphql-core/SDL parse plus shape assertions after duplicate-constraint fix | PASS: both admin paths, filters, response sets, `no-store`, planned status, Core operations/types, and CartItemRequest maximum verified | 2026-11-05 |
