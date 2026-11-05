@@ -182,3 +182,14 @@ Historical next-step note: after T012 implementation, the independent BFF verifi
 - Result, writer run and parent spot-check: **3 failed, 6 passed**. All three expected failures report the currently missing accessible Reject/Accept controls for rejected-state workflows; existing acceptance, pending cache notice, loading/error/empty states pass.
 - `git diff --check` passed before the Frontend test commit. The tests use local MSW only; no remote service or shared/default database was contacted.
 - T018 work-unit commit: Frontend `b23d87c` (`test(frontend): cover review rejection and restoration`), containing only `src/admin/reviews/ReviewsPanel.test.tsx`.
+
+## T019 Core Rejection and Restoration Result
+
+- Status: T019 is implemented and verified. T020 BFF behavior and T021 Frontend controls remain pending.
+- Traceability: `specs/011-moderate-content-reviews/spec.md` User Story 2 and FR-004/FR-005; GraphQL contract `bgg-shop-core/specs/schema.graphql` (unchanged); implementation `bgg-shop-core/saleor/graphql/api.py`; tests `bgg-shop-core/tests/test_graphql_reviews.py`.
+- Core now supports pending-to-rejected, accepted-to-rejected, and rejected-to-accepted, with idempotent repeated ACCEPT/REJECT, no transition to PENDING, row-lock serialization, and `REVIEW_NOT_FOUND` for unknown or soft-deleted reviews. An independent review finding that DELETE remains unsupported was confirmed as expected scope: Core soft-delete is T026, not T019.
+- Added a focused not-found/soft-deleted behavior assertion. Corrected the concurrency test to keep mocked moderator identity active until both worker threads finish and to queue the second action after observing the first lock waiter.
+- Focused command: `python -m pytest -q tests/test_graphql_reviews.py` from `bgg-shop-core`, with a temporary guarded `CREDIT_TEST_POSTGRES_DSN` provisioned inside the healthy local `bgg_reviews_test_db` container. Result after final edits and parent spot-check: **43 passed, 1 warning in 5.17s**, including the three migration tests and concurrent last-serialized-action test.
+- Independent verification before the final test-only coverage addition: **42 passed, 1 warning**, using a separate guarded disposable database; the final parent run observed all 43 tests passing. `python -m py_compile saleor/graphql/api.py tests/test_graphql_reviews.py` and `git diff --check` passed.
+- Cleanup verification: the temporary database and matching role were dropped; a local count query observed `databases=0` and `roles=0` for `credit_test_%`. No default/shared `saleor_db`, remote service, or non-local environment was used.
+- T019 work-unit commit: Core `21dcba7` (`feat(core): support review rejection and restoration`), containing Core implementation and the directly coupled concurrency/not-found test corrections.
