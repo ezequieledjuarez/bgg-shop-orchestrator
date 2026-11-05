@@ -101,28 +101,50 @@ No application code, database schema, index, or migration is included in C-4. An
 
 No application code, database schema, index, or migration was added in C-4. Any future index change is a separately reviewed task.
 
-## Current Work Unit: BFF Metrics Tests
+## Completed Work Unit: BFF Metrics Tests
 
-- [ ] B-1 Write BFF tests for authentication, paired/range validation, repeated-filter forwarding, `no-store`, and public error redaction.
+- [x] B-1 Write BFF tests for authentication, paired/range validation, repeated-filter forwarding, `no-store`, and public error redaction. Collection succeeded and expected route-not-registered RED was observed.
 
 ### Allowed edit surfaces for B-1
 
 - `bgg-shop-bff/tests/test_admin_sales_metrics.py`
-- `bgg-shop-bff/src/proxy.py`
-- `bgg-shop-bff/src/services.py`
-- `bgg-shop-bff/src/controllers/admin_sales_controller.py`
-- `bgg-shop-bff/src/controllers/__init__.py`
 - `bgg-shop-bff/specs/010-sales-metrics-reports-tasks.md`
 - `specs/010-sales-metrics-reports/tasks.md`
 - `odd/tasks/010-sales-metrics-reports.md`
 
-No frontend or Core resolver changes are included in B-1.
+No BFF implementation, OpenAPI, frontend, or Core changes are included in B-1.
 
 ### B-1 routing and verification
 
-- Route: delegated BFF implementation; test setup, proxy/service/controller wiring, and public error behavior span files.
-- Risk: high; BFF authentication and public error-redaction behavior.
-- Verification: run focused BFF tests and contract validation locally; distinguish existing service-suite failures from new failures.
+- Route: delegated test generation via `Test Generator (BFF)`; parent independently reran the focused tests and reviewed the auth/error fixtures.
+- Risk: high; the tests cover public authorization and error-redaction behavior, without changing runtime behavior.
+- Verification: exact `pytest -q tests/test_admin_sales_metrics.py` failed collection because the console entrypoint omitted the BFF root from `sys.path`; the venv runner with `PYTHONPATH=.` could not import missing `redis`. `PYTHONPATH=. pytest -q tests/test_admin_sales_metrics.py` collected successfully and produced 20 expected failures, all 405 from the generic OPTIONS-only catch-all on unregistered GET routes. All GraphQL requests were mocked; no database or network access occurred. No commit was made, per user instruction.
+
+## Current Work Unit: BFF Metrics Routes
+
+- [ ] B-2 Add proxy/service calls for metrics and categories.
+- [ ] B-3 Add controller validation/error mapping and register both GET routes in `app.py`.
+
+### Allowed edit surfaces for B-2/B-3
+
+- `bgg-shop-bff/app.py`
+- `bgg-shop-bff/src/proxy.py`
+- `bgg-shop-bff/src/services.py`
+- `bgg-shop-bff/src/controllers/admin_sales_controller.py`
+- `bgg-shop-bff/src/controllers/__init__.py`
+- `bgg-shop-bff/tests/test_admin_sales_metrics.py`
+- `bgg-shop-bff/specs/010-sales-metrics-reports-tasks.md`
+- `specs/010-sales-metrics-reports/tasks.md`
+- `odd/tasks/010-sales-metrics-reports.md`
+
+No Core or frontend edits are included in B-2/B-3.
+
+### B-2/B-3 routing and verification
+
+- Route: delegated direct implementation; proxy/service/controller/route-registration changes form one API behavior slice.
+- Risk: high; public authorization, validation, and error-redaction behavior.
+- Test-first evidence: B-1 collected successfully and all 20 tests received 405 from the unregistered-route catch-all.
+- Verification: run `PYTHONPATH=. pytest -q tests/test_admin_sales_metrics.py` from BFF and any directly affected focused controller tests; all B-1 cases must pass. Calls to Core remain mocked; no database required.
 
 ### C-3 routing and verification
 
@@ -155,7 +177,7 @@ No frontend or Core resolver changes are included in B-1.
 - [x] C-2 Implement the Core metrics resolver and make its C-1 metrics/filter cases pass.
 - [x] C-3 Implement the Core categories resolver and make its retrieval/authorization cases pass.
 - [x] C-4 Review local EXPLAIN plans; no index justified by synthetic workload.
-- [ ] B-1 Write BFF sales-metrics tests.
+- [x] B-1 Write BFF sales-metrics tests and observe expected RED after successful collection.
 - [ ] B-2..B-6 Implement and validate the BFF endpoints.
 - [ ] F-1..F-6 Implement and validate the admin dashboard.
 - [ ] V-1..V-3 Verify local results, security, and documentation.
@@ -168,7 +190,8 @@ No frontend or Core resolver changes are included in B-1.
 
 ## Progress and Evidence
 
-- Current state: X-5, C-1a, C-2, C-3, and C-4 are complete; B-1 is the current BFF work unit. C-3 changed the Core Graphene resolver, its PostgreSQL test, and the authorized task ledgers. No controller, migration, or frontend implementation is included in Core.
+- Current state: X-5, C-1a, C-2, C-3, C-4, and B-1 are complete; B-2/B-3 are the next BFF work units. C-3 changed the Core Graphene resolver, its PostgreSQL test, and the authorized task ledgers. No controller, migration, or frontend implementation is included in Core.
+- B-1 evidence: added 20 collected cases in `bgg-shop-bff/tests/test_admin_sales_metrics.py` covering both endpoints' auth and no-store behavior, staff/superuser access, date bounds/defaults, product-id parsing, repeated filters, and error redaction. The exact requested command failed collection due to import-path configuration; the successful `PYTHONPATH=.` run returned 20 expected 405 failures from the preflight-only fallback. The focused outcomes and environment limitations are in the BFF and global ledgers.
 - Checks: PyYAML/OpenAPI and graphql-core/SDL parsing and shape assertions passed. `bash bgg-shop-bff/scripts/run_contracts.sh` exited 1 with 9 failed and 7 passed service tests, including unrelated `allow_redirects` mock mismatches and undefined `op_key` failures; full details are in the global evidence ledger.
 - C-1 progress: added Core PostgreSQL GraphQL tests for metrics, dispatch/payment statuses, validation/authentication, and distinct categories. Category and product filtering are asserted independently and together. `python -m py_compile` passed. The focused run against an isolated local PostgreSQL 15 container produced 18 expected failures because Graphene lacks `adminSalesMetrics` and `adminSalesCategories`. The container was removed and the active `saleor` database was not used.
 - X-5/C-1a evidence: both contract parsers and paired-bound assertions passed; Core test compilation passed. The focused run against fresh loopback-only PostgreSQL 15 produced 20 failed, 1 warning in 5.35s. A parent rerun reproduced 20 expected failures in 5.23s, with no collection or database setup errors; container cleanup was verified. A delegated execution verifier reported 20 errors without a traceback and is not accepted as behavior evidence. No behavior pass is claimed.
@@ -186,4 +209,4 @@ No frontend or Core resolver changes are included in B-1.
 - C-3 preparation commit: orchestrator `413a8df28a7520a550920df613b08b0ba17808a6`.
 - C-3 implementation and verification commits: Core `5c7724ec875ba8076d486fe87cd88966d263413d`; orchestrator `ae0e724956aaf9a9c5d9a441cbf4eb30d7e10bf0`.
 - C-4 query-plan review commits: Core `16fb5a92ee3dd642fec876638f096165a4c1e241`; orchestrator `8b777bf147bd6d0d0c6772c8cf96de561cd47be1`.
-- Next step: begin B-1 BFF tests against the paired-range contract; keep the frontend and Core data layers within their existing scoped tasks.
+- Next step: B-2/B-3 implement the BFF proxy/service/controller routes that make the B-1 tests pass; keep the frontend and Core data layers within their existing scoped tasks.

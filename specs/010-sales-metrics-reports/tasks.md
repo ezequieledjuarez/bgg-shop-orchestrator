@@ -25,7 +25,7 @@ For future service work, check both BFF OpenAPI routes and Core GraphQL operatio
 
 ## BFF (`bgg-shop-bff`)
 
-- [ ] B-1 Write failing tests in `bgg-shop-bff/tests/test_admin_sales_metrics.py`: auth required (401), non-admin (403), param validation (invalid/missing-tz dates, one-sided `from`/`to`, `from >= to`, >366 days, non-integer `product_id`), forwarding of repeated filters, `Cache-Control: no-store`, and negative tests proving no leakage of upstream exceptions, traces, internal URLs or credentials. (depends on X-5)
+- [x] B-1 Write failing tests in `bgg-shop-bff/tests/test_admin_sales_metrics.py`: auth for metrics and categories, staff/superuser access, date/filter validation, repeated-filter forwarding, `Cache-Control: no-store`, and upstream-detail redaction. Expected RED observed with successful collection. (depends on X-5)
 - [ ] B-2 Add proxy call in `bgg-shop-bff/src/proxy.py` and service in `bgg-shop-bff/src/services.py`, following `list_admin_audit`. (depends on B-1)
 - [ ] B-3 Add `bgg-shop-bff/src/controllers/admin_sales_controller.py` with validation and error mapping; register it where other admin controllers are registered. Make B-1 pass. (depends on B-2)
 - [ ] B-4 Add the categories endpoint with tests. (depends on X-3)
@@ -81,3 +81,6 @@ Core, BFF, and frontend tracks can run in parallel after X-5; the BFF integratio
 | C-3 | `PYTHONPATH=. python -m pytest -q -p no:cacheprovider --tb=short tests/test_admin_sales_metrics_postgres.py` with fresh cached `docker.io/library/postgres:15-alpine` Podman container bound to `127.0.0.1` | PASS: 22 passed, 1 Django deprecation warning in 4.73s; container explicitly removed and absence verified; active `saleor` database not used. | 2026-11-05 |
 | C-3 | `python -m py_compile saleor/graphql/api.py`; `git diff --check` | PASS for both checks. | 2026-11-05 |
 | C-3 | `PYTHONPATH=. python -m pytest -q -p no:cacheprovider tests/test_graphql_products.py::test_generated_schema_matches_reference_sdl` | PASS: 1 passed, 1 Django deprecation warning in 1.72s. The test compares schemas in memory and does not connect to PostgreSQL. | 2026-11-05 |
+| B-1 | `pytest -q tests/test_admin_sales_metrics.py` from BFF | COLLECTION ERROR: `ModuleNotFoundError: No module named 'app'`; this console entrypoint did not add the BFF root to the import path. | 2026-11-05 |
+| B-1 | `PYTHONPATH=. .venv/bin/pytest -q tests/test_admin_sales_metrics.py` | COLLECTION ERROR: BFF virtual environment lacks `redis`, imported by `app.py`; no dependency installed. | 2026-11-05 |
+| B-1 | `PYTHONPATH=. pytest -q tests/test_admin_sales_metrics.py` | EXPECTED RED: 20 failed, 20 warnings; collection succeeded. Each request received 405 from the generic OPTIONS-only catch-all because the metrics/category GET routes are not registered. GraphQL requests were mocked; no database/network access. | 2026-11-05 |
