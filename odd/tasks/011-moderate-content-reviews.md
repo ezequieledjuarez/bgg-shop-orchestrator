@@ -196,10 +196,18 @@ Historical next-step note: after T012 implementation, the independent BFF verifi
 
 ## T020 BFF Moderation Cache Result
 
-- Status: T020 is implemented and verified. T021 Frontend controls and T022 local US2 integration remain pending.
+- Status: T020 is implemented and verified. T021 Frontend controls are complete; T022 local US2 integration remains pending.
 - Traceability: `specs/011-moderate-content-reviews/spec.md` User Story 2; canonical REST contract `bgg-shop-bff/specs/openapi.yaml` (unchanged); controller `bgg-shop-bff/src/controllers/reviews_controller.py`; focused tests `bgg-shop-bff/tests/test_reviews.py`.
 - Every successfully committed moderation action now uses the existing bounded two-attempt catalog-cache invalidation. The BFF preserves the Core success response and sets `cache_refresh_pending=true` after two invalidation failures; the Core mutation is not retried. This applies to ACCEPT, REJECT, and the already-declared DELETE action, without implementing Core soft-delete behavior.
 - Existing Core error mapping already returned sanitized 404 for `REVIEW_NOT_FOUND` and 409 only for `INVALID_TRANSITION`; those paths and negative leakage assertions passed. `src/proxy.py` required no change.
 - Exact command: `cd bgg-shop-bff && PYTHONPATH=. pytest -q tests/test_reviews.py`
 - Result and parent spot-check: **48 passed, 45 warnings in 2.87s**. Warnings are existing `datetime.utcnow()` deprecations in `app.py`. `python -m py_compile src/controllers/reviews_controller.py` and `git diff --check` passed.
 - T020 work-unit commit: BFF `65edb84` (`feat(bff): invalidate review cache after moderation`), containing only the moderation controller change.
+
+## T021 Frontend Rejection and Restoration Result
+
+- Status: T021 is implemented and verified. T022 local US2 integration remains pending.
+- Traceability: `specs/011-moderate-content-reviews/spec.md` User Story 2; unchanged BFF contract `bgg-shop-bff/specs/openapi.yaml` and generated types `bgg-shop-frontend/src/types/generated/bff-api.d.ts`; component `bgg-shop-frontend/src/admin/reviews/ReviewsPanel.tsx`; behavior tests `bgg-shop-frontend/src/admin/reviews/ReviewsPanel.test.tsx`.
+- The panel offers Reject for pending/accepted reviews and Accept for pending/rejected reviews, displays status after the queue refresh, reports safe action failures, and updates public-state feedback. The existing typed request/response contract supports both actions; no type regeneration was needed.
+- Exact checks from `bgg-shop-frontend`: `npm run test -- --run src/admin/reviews/ReviewsPanel.test.tsx` — **9 passed**; `npm run lint -- src/admin/reviews/ReviewsPanel.tsx` — **0 warnings, 0 errors**; `npm run build` — **passed** (includes TypeScript); `git diff --check` — **passed**.
+- T021 work-unit commit: Frontend `36d64b2` (`feat(frontend): add review reject and restore actions`), containing only the moderation panel change.
