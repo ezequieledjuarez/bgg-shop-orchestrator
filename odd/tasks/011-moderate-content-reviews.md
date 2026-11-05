@@ -227,13 +227,22 @@ Historical next-step note: after T012 implementation, the independent BFF verifi
 - The initial attempt exposed stale public detail after rejection because the running isolated BFF had not reloaded the edited controller source. Only `bgg_reviews_test_bff` was restarted; its `/health` endpoint returned `{"status":"healthy"}` afterward. The passing result is from the rerun after restart, not the initial attempt.
 - Scope: isolated local Core `127.0.0.1:18001`, BFF `127.0.0.1:5001`, Frontend `127.0.0.1:3000`, and disposable PostgreSQL inside `bgg_reviews_test_db`. No default/shared `saleor_db` or remote environment was used.
 - Frontend E2E test commit: `85f2631` (`test(e2e): verify review rejection and restoration`).
-- T023 test authoring is now complete with expected RED. Next are T024–T029 (remaining US3 tests, implementation, and local integration), followed by T030–T031 (cross-cutting local documentation and focused functional validation). T016's guarded PostgreSQL migration and concurrency cases passed during T019.
+- T023 and T024 Core/BFF test authoring are complete. Next are T025–T029 (Frontend tests, implementation, and local integration), followed by T030–T031 (cross-cutting local documentation and focused functional validation). T016's guarded PostgreSQL migration and concurrency cases passed during T019.
 
 ## T023 Core Soft-Delete Test-Authoring Result
 
-- Status: T023 test authoring is complete with expected RED. T024/T025 BFF and Frontend test authoring and T026+ implementation remain pending.
+- Status: T023 test authoring is complete with expected RED. T024 BFF test authoring is complete; T025 Frontend test authoring and T026+ implementation remain pending.
 - Traceability: `specs/011-moderate-content-reviews/spec.md` User Story 3; Core implementation target `bgg-shop-core/saleor/graphql/api.py` (unchanged); tests `bgg-shop-core/tests/test_graphql_reviews.py`.
 - Added tests assert that DELETE preserves an accepted review's status while reporting the separate deleted marker and non-public state. A guarded PostgreSQL integration test verifies retained-row state, queue exclusion, public-list exclusion, and count/average recalculation when deleting the last accepted review.
 - Exact command: `python -m pytest -q tests/test_graphql_reviews.py` from `bgg-shop-core` with a temporary guarded `CREDIT_TEST_POSTGRES_DSN` on the isolated `bgg_reviews_test_db` container.
 - Result, writer and parent spot-check: **2 failed, 43 passed, 1 warning in 6.57s**. Both expected RED failures are DELETE behavior because Core T026 is not implemented yet; PostgreSQL migration and retention/aggregation fixtures ran. No default/shared `saleor_db` or remote service was used. `git diff --check` passed.
 - T023 work-unit commit: Core `b933b8a` (`test(core): cover review soft deletion`), containing test authoring only.
+
+## T024 BFF Soft-Delete Test-Authoring Result
+
+- Status: T024 test authoring is complete. T025 Frontend test authoring and T026+ implementation remain pending.
+- Traceability: `specs/011-moderate-content-reviews/spec.md` User Story 3; BFF contract `bgg-shop-bff/specs/openapi.yaml`; tests `bgg-shop-bff/tests/test_reviews.py`.
+- Added distinct coverage for repeated DELETE requests returning successful idempotent Core responses and sanitized 404 for both unknown DELETE and non-delete action on an already deleted review. Existing T017 tests already cover DELETE response fields, explicit-only 409 mapping, unrelated errors as sanitized 502, and post-commit cache retry exhaustion returning success with `cache_refresh_pending=true`; those tests were reused rather than duplicated.
+- Exact command: `cd bgg-shop-bff && PYTHONPATH=. pytest -q tests/test_reviews.py`
+- Result and parent spot-check: **51 passed, 49 warnings in 2.69s**. Warnings are existing `datetime.utcnow()` deprecations in `app.py`. `git diff --check` passed. No database or remote service was used.
+- T024 work-unit commit: BFF `c6f1079` (`test(bff): cover review soft-delete responses`), containing test authoring only; no implementation change was required for the existing generic action mapping.
