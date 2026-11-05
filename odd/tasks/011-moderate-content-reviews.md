@@ -46,7 +46,8 @@ The approved feature specification defines a staff/superuser moderation queue an
 - [x] T015: Locally verify the queue-to-accept integration (US1; depends on T015a). Focused Playwright run passed; see exact command and outcome below.
 - [x] T016: Core tests were authored and first observed RED; the final guarded PostgreSQL run passed all 43 focused tests, including migration and concurrency coverage.
 - [x] T017–T022: Implement and locally verify rejection and restoration (US2); final isolated E2E result is recorded below.
-- [ ] T023–T029: Implement and locally verify soft deletion (US3).
+- [x] T023–T025: Author Core, BFF, and Frontend soft-delete tests before implementation; Core observed RED, BFF passed, and Frontend observed expected RED.
+- [ ] T026–T029: Implement and locally verify soft deletion (US3).
 - [ ] T030–T031: Complete local documentation and focused functional validation.
 
 ## Progress and Verification
@@ -246,3 +247,13 @@ Historical next-step note: after T012 implementation, the independent BFF verifi
 - Exact command: `cd bgg-shop-bff && PYTHONPATH=. pytest -q tests/test_reviews.py`
 - Result and parent spot-check: **51 passed, 49 warnings in 2.69s**. Warnings are existing `datetime.utcnow()` deprecations in `app.py`. `git diff --check` passed. No database or remote service was used.
 - T024 work-unit commit: BFF `c6f1079` (`test(bff): cover review soft-delete responses`), containing test authoring only; no implementation change was required for the existing generic action mapping.
+
+## T025 Frontend Soft-Delete Test-Authoring Result
+
+- Status: T025 test authoring is complete. T026–T028 implementation and T029 isolated local integration remain pending.
+- Route/risk: delegated direct to the Frontend Test Generator because reading the existing panel and test conventions prepares a new test file. Medium risk (test-only); the writer ran the focused suite and the parent repeated it from the correct package root.
+- Traceability: `specs/011-moderate-content-reviews/spec.md` User Story 3; `bgg-shop-frontend/src/admin/reviews/ReviewsPanel.test.tsx`.
+- Added tests for the accessible delete action, success feedback and queue refresh, and safe failure feedback without refreshing after the action fails. No production code was changed.
+- Exact command: `cd bgg-shop-frontend && npm test -- --run src/admin/reviews/ReviewsPanel.test.tsx`
+- Result and parent spot-check: **2 failed, 9 passed (11 tests)**. Both failures are expected RED because the panel does not yet expose the accessible delete button; unrelated existing tests pass. A first parent invocation from the repository root failed because no root `package.json` exists; the exact command from the Frontend root produced the expected result.
+- T025 work-unit commit: Frontend `453100b` (`test(frontend): cover review soft deletion`), containing only the authorized test file.
