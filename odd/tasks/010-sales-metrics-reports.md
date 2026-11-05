@@ -333,6 +333,7 @@ F-4 router/navigation changes are explicitly excluded. The F-2 test file is fixe
 
 ## Work-Unit Commits
 
+- Orchestrator plan/ledger closeout: `5af7395eca0402e157f819618c98d24191046a7e`.
 - Core C-6/verification: `35e0f0c7f36f0813beb35dc3e39d80bfcd53e565`.
 - BFF routes, tests, and docs: `8baa2fc1ac703d458174699e2f75ca202b8d4efd`.
 - Frontend dashboard, E2E runner/spec, and checks: `8e7625f780e15e585188dc7d3c3436a9332de8ac`.
