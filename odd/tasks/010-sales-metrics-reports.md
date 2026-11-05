@@ -67,9 +67,9 @@ No resolver, controller, database schema, migration, or frontend implementation 
 
 No controller, database schema, migration, or frontend implementation is included in C-2.
 
-## Current Work Unit: Core Categories
+## Completed Work Unit: Core Categories
 
-- [ ] C-3 Implement `adminSalesCategories` in `bgg-shop-core/saleor/graphql/api.py` and pass the category retrieval and authorization tests.
+- [x] C-3 Implement `adminSalesCategories` in `bgg-shop-core/saleor/graphql/api.py` and pass the category retrieval and authorization tests.
 
 ### Allowed edit surfaces for C-3
 
@@ -83,9 +83,9 @@ No controller, database schema, migration, or frontend implementation is include
 
 ### C-3 routing and verification
 
-- Route: delegated direct implementation; reuse the Core categories test cases already present.
+- Route: delegated direct implementation via `Python Entity Implementer`; parent independently reviewed category retrieval/authentication and reran the full suite.
 - Risk: high; category data access and authorization are part of the public admin query.
-- Verification: run the full Core sales-metrics test module against a fresh loopback-only disposable PostgreSQL container; don't use the active `saleor` database.
+- Verification: run the full Core sales-metrics PostgreSQL test module, syntax compilation, whitespace validation, and GraphQL schema parity; database checks use a fresh loopback-only disposable PostgreSQL container, never the active `saleor` database.
 
 ### C-2 routing and verification
 
@@ -110,7 +110,7 @@ No controller, database schema, migration, or frontend implementation is include
 - [x] X-5 Align paired date-range semantics in the contracts and plan.
 - [x] C-1a Add tests for one-sided date ranges and observe expected RED.
 - [x] C-2 Implement the Core metrics resolver and make its C-1 metrics/filter cases pass.
-- [ ] C-3 Implement the Core categories resolver and make its retrieval/authorization cases pass.
+- [x] C-3 Implement the Core categories resolver and make its retrieval/authorization cases pass.
 - [ ] C-4 Review the local query plan and record whether an index is justified.
 - [ ] B-1..B-6 Implement and validate the BFF endpoints.
 - [ ] F-1..F-6 Implement and validate the admin dashboard.
@@ -124,13 +124,15 @@ No controller, database schema, migration, or frontend implementation is include
 
 ## Progress and Evidence
 
-- Current state: X-5, C-1a, and C-2 are complete; C-3 is the next Core work unit. C-2 changed only the Core Graphene resolver, its PostgreSQL tests, and the authorized task ledgers. No category resolver, controller, migration, or frontend implementation is included.
+- Current state: X-5, C-1a, C-2, and C-3 are complete; C-4 is the next Core work unit. C-3 changed the Core Graphene resolver, its PostgreSQL test, and the authorized task ledgers. No controller, migration, or frontend implementation is included.
 - Checks: PyYAML/OpenAPI and graphql-core/SDL parsing and shape assertions passed. `bash bgg-shop-bff/scripts/run_contracts.sh` exited 1 with 9 failed and 7 passed service tests, including unrelated `allow_redirects` mock mismatches and undefined `op_key` failures; full details are in the global evidence ledger.
 - C-1 progress: added Core PostgreSQL GraphQL tests for metrics, dispatch/payment statuses, validation/authentication, and distinct categories. Category and product filtering are asserted independently and together. `python -m py_compile` passed. The focused run against an isolated local PostgreSQL 15 container produced 18 expected failures because Graphene lacks `adminSalesMetrics` and `adminSalesCategories`. The container was removed and the active `saleor` database was not used.
 - X-5/C-1a evidence: both contract parsers and paired-bound assertions passed; Core test compilation passed. The focused run against fresh loopback-only PostgreSQL 15 produced 20 failed, 1 warning in 5.35s. A parent rerun reproduced 20 expected failures in 5.23s, with no collection or database setup errors; container cleanup was verified. A delegated execution verifier reported 20 errors without a traceback and is not accepted as behavior evidence. No behavior pass is claimed.
 - C-2 evidence: the exact focused command `PYTHONPATH=. python -m pytest -q -p no:cacheprovider --tb=short tests/test_admin_sales_metrics_postgres.py -k 'not categories'` passed with 17 passed, 4 deselected, and 1 Django `USE_TZ` deprecation warning in 4.25s against a fresh loopback-only Podman PostgreSQL 15 container. A parent rerun passed 17 in 4.20s. `python -m py_compile saleor/graphql/api.py` and `git diff --check` passed. The parent's container remained after the command despite its exit trap; it was explicitly removed and absence verified. A delegated runner reported 20 setup errors without a traceback; the parent rerun reproduced the passing result.
 - C-2 SDL check: the existing whole-schema parity test fails only because runtime lacks `adminSalesCategories`, reserved for C-3. A targeted comparison confirmed `adminSalesMetrics` return type, argument types/names, payload type fields, and description match the SDL. Category tests remain excluded and unimplemented.
 - C-2 implementation: uses parameterized SQL with exact category/product array filters; paid revenue is matching line `subtotal`, order counts are distinct, top products use the required tie-break, daily revenue groups in UTC, and dispatch/payment counts filter on `created_at`.
+- C-3 evidence: category-only RED was 4 failed, 17 deselected, 1 warning before implementation. The focused category run passed 5 tests (17 deselected, 1 warning). The delegated full command passed 22 tests in 4.73s; the parent rerun passed 22 in 5.04s with explicit `TEST_CONTAINER_CLEANUP=PASS`. A separate delegated verifier reported 22 skipped because its process lacked the DSN; that result is not accepted. Parent rerun passed with the DSN explicitly passed. `python -m py_compile saleor/graphql/api.py`, `git diff --check`, and schema parity passed; parity was confirmed to be schema-only and did not connect to PostgreSQL.
+- C-3 implementation: `adminSalesCategories` uses the active staff/superuser guard and a static `SELECT DISTINCT category ... ORDER BY category`; stored strings remain unmodified. Tests cover ordering, duplicates, case/whitespace, inactive and unauthorized users, and superuser access.
 - C-1 partial work-unit commits: orchestrator `4a7af5f542030b6be388289b6b5396d3f252a10c`; Core `c7f0b3c132264b2cf1279526abce5ffc46eda414`.
 - C-1 discovery: runtime Graphene currently exposes neither `adminSalesMetrics` nor `adminSalesCategories`; the plan does not decide whether `revenueByDay` should zero-fill days without revenue, so the test documents that gap without asserting either behavior.
 - Work-unit commits: orchestrator `4ebff3883e85bc222ccba260889e2138729f14df`; Core `b98a131da4ead699952e601f3af4f15e0a8416d6`; BFF `9c3924a7e290f4d92011685baf16970bfa078d04`.
@@ -138,4 +140,4 @@ No controller, database schema, migration, or frontend implementation is include
 - X-5/C-1a work-unit commits: orchestrator `76531206b92a58215d17e0f36c8782cc81ce758c`; Core `590c9fac40f8a57224c07395f82588774c93a326`; BFF `0d86f13807134e3a8436409c08299f6fa4705da9`.
 - C-2 work-unit commits: Core `b447261a93d6f127963646ea24874ea9a9eb487d`; orchestrator `717be40568313763f6c09f94f64aa8455871fe6c`.
 - C-3 preparation commit: orchestrator `413a8df28a7520a550920df613b08b0ba17808a6`.
-- Next step: implement and test `adminSalesCategories` in C-3; do not broaden the completed C-2 slice.
+- Next step: continue with C-4, reviewing the local query plan as a separate step; do not broaden the completed C-3 slice.
