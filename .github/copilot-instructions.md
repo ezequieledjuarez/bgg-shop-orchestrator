@@ -1,6 +1,7 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
+at specs/010-sales-metrics-reports/plan.md
 <!-- SPECKIT END -->
 
 This project is deployed and validated exclusively in local environments. Do not propose or require staging, production, or other non-local deployments or validation. Perform applicable functional and security checks locally.
