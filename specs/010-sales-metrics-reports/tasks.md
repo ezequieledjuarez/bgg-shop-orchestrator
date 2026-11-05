@@ -50,7 +50,7 @@ For future service work, check both BFF OpenAPI routes and Core GraphQL operatio
 ## Dependencies
 
 X-1..X-3 → X-4 → X-5 → (C-1/C-1a → C-2, B-1 → B-2 → B-3, F-1 → F-2 → F-3) → F-5 → V-*.
-Core, BFF and Frontend tracks can run in parallel after X-4; the BFF integration check against real Core and E2E need C-2 and B-3.
+Core, BFF, and frontend tracks can run in parallel after X-5; the BFF integration check against real Core and E2E need C-2 and B-3.
 
 ## Evidence Ledger
 
