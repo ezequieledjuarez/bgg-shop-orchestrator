@@ -140,4 +140,5 @@ No controller, database schema, migration, or frontend implementation is include
 - X-5/C-1a work-unit commits: orchestrator `76531206b92a58215d17e0f36c8782cc81ce758c`; Core `590c9fac40f8a57224c07395f82588774c93a326`; BFF `0d86f13807134e3a8436409c08299f6fa4705da9`.
 - C-2 work-unit commits: Core `b447261a93d6f127963646ea24874ea9a9eb487d`; orchestrator `717be40568313763f6c09f94f64aa8455871fe6c`.
 - C-3 preparation commit: orchestrator `413a8df28a7520a550920df613b08b0ba17808a6`.
+- C-3 implementation and verification commits: Core `5c7724ec875ba8076d486fe87cd88966d263413d`; orchestrator `ae0e724956aaf9a9c5d9a441cbf4eb30d7e10bf0`.
 - Next step: continue with C-4, reviewing the local query plan as a separate step; do not broaden the completed C-3 slice.
