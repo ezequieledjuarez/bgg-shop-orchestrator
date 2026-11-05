@@ -67,6 +67,26 @@ No resolver, controller, database schema, migration, or frontend implementation 
 
 No controller, database schema, migration, or frontend implementation is included in C-2.
 
+## Current Work Unit: Core Categories
+
+- [ ] C-3 Implement `adminSalesCategories` in `bgg-shop-core/saleor/graphql/api.py` and pass the category retrieval and authorization tests.
+
+### Allowed edit surfaces for C-3
+
+- `bgg-shop-core/saleor/graphql/api.py`
+- `bgg-shop-core/tests/test_admin_sales_metrics_postgres.py`
+- `bgg-shop-core/specs/010-sales-metrics-reports-tasks.md`
+- `specs/010-sales-metrics-reports/tasks.md`
+- `odd/tasks/010-sales-metrics-reports.md`
+
+No controller, database schema, migration, or frontend implementation is included in C-3.
+
+### C-3 routing and verification
+
+- Route: delegated direct implementation; reuse the Core categories test cases already present.
+- Risk: high; category data access and authorization are part of the public admin query.
+- Verification: run the full Core sales-metrics test module against a fresh loopback-only disposable PostgreSQL container; don't use the active `saleor` database.
+
 ### C-2 routing and verification
 
 - Route: delegated direct implementation via `Python Entity Implementer`, bounded to the Core resolver and metrics/filter tests; parent independently reviewed SQL/schema behavior and reran the focused tests.
@@ -90,7 +110,7 @@ No controller, database schema, migration, or frontend implementation is include
 - [x] X-5 Align paired date-range semantics in the contracts and plan.
 - [x] C-1a Add tests for one-sided date ranges and observe expected RED.
 - [x] C-2 Implement the Core metrics resolver and make its C-1 metrics/filter cases pass.
-- [ ] C-3 Implement and test the Core categories resolver.
+- [ ] C-3 Implement the Core categories resolver and make its retrieval/authorization cases pass.
 - [ ] C-4 Review the local query plan and record whether an index is justified.
 - [ ] B-1..B-6 Implement and validate the BFF endpoints.
 - [ ] F-1..F-6 Implement and validate the admin dashboard.
