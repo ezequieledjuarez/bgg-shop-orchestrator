@@ -1,7 +1,7 @@
 # Tasks: CU-A03 — Moderate Content and Reviews
 
 **Input**: `specs/011-moderate-content-reviews/{spec,plan,research,data-model,quickstart}.md` and the two planning drafts in `contracts/`.
-**Planning status**: T001–T022 are recorded complete below, including T012 independent review, isolated T015/T022 local journeys, T016 Core test authoring and its final guarded PostgreSQL concurrency verification. T006's PostgreSQL migration integration tests previously passed against an isolated disposable loopback database. T008–T010 tests were authored and their expected RED was observed; T011's focused Core review tests now pass. T023–T031 remain pending. The approved Core and BFF definitions are promoted and locally validated.
+**Planning status**: T001–T023 are recorded complete below, including T012 independent review, isolated T015/T022 local journeys, T016's guarded PostgreSQL concurrency verification, and T023 Core soft-delete test authoring with expected RED. T006's PostgreSQL migration integration tests previously passed against an isolated disposable loopback database. T008–T010 tests were authored and their expected RED was observed; T011's focused Core review tests now pass. T024–T031 remain pending. The approved Core and BFF definitions are promoted and locally validated.
 **Scope**: Local project only. Do not run staging, production, CI, or remote validation.
 **Tests**: Included because the specification and quickstart require independent functional evidence.
 
@@ -81,7 +81,7 @@ Tasks are dependency-ordered and grouped by user story. Project ownership is sta
 
 ### Tests — write before implementation
 
-- [ ] T023 [P] [US3] bgg-shop-core: Add tests for retained soft-deleted records, queue exclusion, public-list exclusion, and count/average recalculation including deletion of the last accepted review in `bgg-shop-core/tests/test_graphql_reviews.py` (depends on T022).
+- [x] T023 [P] [US3] bgg-shop-core: Add tests for retained soft-deleted records, queue exclusion, public-list exclusion, and count/average recalculation including deletion of the last accepted review in `bgg-shop-core/tests/test_graphql_reviews.py` (depends on T022). Core test commit: `b933b8a`. Guarded disposable PostgreSQL run observed **2 expected failures, 43 passed, 1 warning**; failures are the unsupported Core DELETE action, while retention/aggregate integration setup executed.
 - [ ] T024 [P] [US3] bgg-shop-bff: Add tests for repeated DELETE success, unknown-ID/non-delete-on-deleted 404, 409 only for genuinely invalid transition, sanitized failures, and cache-retry failure handling after Core commit (successful response with `cache_refresh_pending=true`) in `bgg-shop-bff/tests/test_reviews.py` (depends on T022).
 - [ ] T025 [P] [US3] bgg-shop-frontend: Add tests for the delete action, success/failure feedback, and queue refresh in `bgg-shop-frontend/src/admin/reviews/ReviewsPanel.test.tsx` (depends on T022).
 
