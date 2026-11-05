@@ -18,7 +18,7 @@ For future service work, check both BFF OpenAPI routes and Core GraphQL operatio
 
 - [x] C-1 Write failing PostgreSQL tests in `bgg-shop-core/tests/test_admin_sales_metrics_postgres.py` (disposable DB), covering range/revenue rules, exact filters independently and together, top-10 tie-breaks, UTC daily aggregation, dispatch boundaries/status exclusions, status dates, validation, authorization, and category retrieval. (depends on X-4; expected RED observed)
 - [x] C-1a Add PostgreSQL GraphQL tests for `from`-only (missing `to`) and `to`-only (missing `from`), explicitly passing `None` for each omitted bound; observe expected RED before resolver implementation.
-- [ ] C-2 Implement the resolver for `adminSalesMetrics` in `bgg-shop-core/saleor/graphql/api.py` (or a new module imported there) with staff/superuser guard, input validation and parameterized SQL (no string-built SQL, `Decimal` throughout). Make the metrics and filter cases in C-1/C-1a pass; category-query cases follow in C-3. (depends on C-1 and C-1a)
+- [x] C-2 Implement the resolver for `adminSalesMetrics` in `bgg-shop-core/saleor/graphql/api.py` with staff/superuser guard, input validation and parameterized SQL (no interpolated user values; Decimal database results retained through Graphene serialization). Metrics and filter cases in C-1/C-1a pass; category-query cases remain for C-3. (depends on C-1 and C-1a)
 - [ ] C-3 Implement `adminSalesCategories` resolver and test. (depends on X-3)
 - [ ] C-4 Check query plan locally with `EXPLAIN` on seeded data; add an index migration only if justified, as a separate reviewed step. Record result either way.
 - [ ] C-5 Run Core test suite for touched areas and record results.
@@ -56,6 +56,10 @@ Core, BFF and Frontend tracks can run in parallel after X-4; the BFF integration
 
 | Task | Check run | Result | Date |
 |------|-----------|--------|------|
+| C-2 | `PYTHONPATH=. python -m pytest -q -p no:cacheprovider --tb=short tests/test_admin_sales_metrics_postgres.py -k 'not categories'` with fresh loopback-only Podman PostgreSQL 15 | PASS: 17 passed, 4 deselected, 1 Django deprecation warning in 4.25s; temporary container removal explicitly verified. | 2026-11-05 |
+| C-2 | `python -m py_compile saleor/graphql/api.py`; `git diff --check` | PASS for both checks. | 2026-11-05 |
+| C-2 | Parent rerun of the focused Core metrics/filter suite against a fresh Podman PostgreSQL 15 container | PASS: 17 passed, 4 deselected, 1 Django warning in 4.20s. `py_compile` and `git diff --check` passed. The container remained after the command despite its exit trap; it was removed explicitly and absence was verified. | 2026-11-05 |
+| C-2 | `PYTHONPATH=. python -m pytest -q -p no:cacheprovider --tb=short tests/test_graphql_products.py::test_generated_schema_matches_reference_sdl` | FAIL: runtime/SDL parity differs only because `adminSalesCategories` remains unimplemented for C-3; targeted comparison confirmed the C-2 metrics operation, arguments, payload fields, and description match. | 2026-11-05 |
 | X-1..X-3 | PyYAML parse and OpenAPI route/schema/parameter/response assertions; `graphql-core` parse and SDL operation/type assertions | PASS: `OPENAPI_PARSE_AND_ASSERTIONS=PASS`; `GRAPHQL_PARSE_AND_ASSERTIONS=PASS` | 2026-11-05 |
 | X-4 | Direct `scripts/run_contracts.sh` from BFF | EXIT 126: script is not executable; rerun through Bash | 2026-11-05 |
 | X-4 | `bash scripts/run_contracts.sh` after initial SDL update | EXIT 0: command reported pass; script runs `pytest tests/test_services_* -q` rather than schema parsers | 2026-11-05 |
