@@ -112,4 +112,5 @@ No controller, database schema, migration, or frontend implementation is include
 - C-1 discovery: runtime Graphene currently exposes neither `adminSalesMetrics` nor `adminSalesCategories`; the plan does not decide whether `revenueByDay` should zero-fill days without revenue, so the test documents that gap without asserting either behavior.
 - Work-unit commits: orchestrator `4ebff3883e85bc222ccba260889e2138729f14df`; Core `b98a131da4ead699952e601f3af4f15e0a8416d6`; BFF `9c3924a7e290f4d92011685baf16970bfa078d04`.
 - C-1 completion commits: orchestrator `a9a68426529d99d04b35fac5c118b7dad64bb1df`; Core `071c072c9571a94c04079bc65604a20cfab7419f`.
+- X-5/C-1a work-unit commits: orchestrator `76531206b92a58215d17e0f36c8782cc81ce758c`; Core `590c9fac40f8a57224c07395f82588774c93a326`; BFF `0d86f13807134e3a8436409c08299f6fa4705da9`.
 - Next step: implement C-2 and rerun its metrics/filter cases on a disposable local PostgreSQL container.
