@@ -39,7 +39,10 @@ The approved feature specification defines a staff/superuser moderation queue an
 - [x] T009: Author BFF moderation tests and observe the expected RED.
 - [x] T010: Author frontend moderation queue and acceptance UI tests and observe the expected RED.
 - [ ] T011: Core queue/accept implementation and writer self-check passed, but the required independent review is pending because agent model routing is unavailable.
-- [ ] T012–T015: Implement and locally verify BFF/frontend queue and acceptance (US1).
+- [ ] T012: Implement the BFF queue/action adapter (US1).
+- [x] T013: Implement the frontend review queue and acceptance action (US1).
+- [x] T014: Register the frontend moderation route and navigation entry (US1).
+- [ ] T015: Locally verify the complete queue-to-accept integration (US1).
 - [ ] T016–T022: Implement and locally verify rejection and restoration (US2).
 - [ ] T023–T029: Implement and locally verify soft deletion (US3).
 - [ ] T030–T031: Complete local documentation and focused functional validation.
