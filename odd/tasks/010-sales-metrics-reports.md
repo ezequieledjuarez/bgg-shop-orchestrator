@@ -81,6 +81,24 @@ No controller, database schema, migration, or frontend implementation is include
 
 No controller, database schema, migration, or frontend implementation is included in C-3.
 
+## Current Work Unit: Query Plan Review
+
+- [ ] C-4 Review local EXPLAIN plans on synthetic seeded data and record whether a query index is justified.
+
+### Allowed edit surfaces for C-4
+
+- `bgg-shop-core/specs/010-sales-metrics-reports-tasks.md`
+- `specs/010-sales-metrics-reports/tasks.md`
+- `odd/tasks/010-sales-metrics-reports.md`
+
+No application code, database schema, index, or migration is included in C-4. Any justified index change is a separately reviewed task.
+
+### C-4 routing and verification
+
+- Route: direct local query-plan review using the cached PostgreSQL image and synthetic data in a disposable loopback-only database.
+- Risk: medium; seeded data and EXPLAIN run only inside the temporary database, never the active `saleor` database.
+- Verification: run `EXPLAIN (ANALYZE, BUFFERS)` for the metrics range and category filter shapes, destroy the temporary container, and record plan findings without creating indexes.
+
 ### C-3 routing and verification
 
 - Route: delegated direct implementation via `Python Entity Implementer`; parent independently reviewed category retrieval/authentication and reran the full suite.
