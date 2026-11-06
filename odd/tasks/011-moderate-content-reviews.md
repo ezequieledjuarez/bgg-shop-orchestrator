@@ -47,7 +47,8 @@ The approved feature specification defines a staff/superuser moderation queue an
 - [x] T016: Core tests were authored and first observed RED; the final guarded PostgreSQL run passed all 43 focused tests, including migration and concurrency coverage.
 - [x] T017–T022: Implement and locally verify rejection and restoration (US2); final isolated E2E result is recorded below.
 - [x] T023–T025: Author Core, BFF, and Frontend soft-delete tests before implementation; Core observed RED, BFF passed, and Frontend observed expected RED.
-- [ ] T026–T029: Implement and locally verify soft deletion (US3).
+- [x] T026–T028: Implement Core soft deletion, confirm existing BFF DELETE handling, and add the Frontend delete action.
+- [ ] T029: Verify soft deletion through the isolated local stack.
 - [ ] T030–T031: Complete local documentation and focused functional validation.
 
 ## Progress and Verification
@@ -257,3 +258,13 @@ Historical next-step note: after T012 implementation, the independent BFF verifi
 - Exact command: `cd bgg-shop-frontend && npm test -- --run src/admin/reviews/ReviewsPanel.test.tsx`
 - Result and parent spot-check: **2 failed, 9 passed (11 tests)**. Both failures are expected RED because the panel does not yet expose the accessible delete button; unrelated existing tests pass. A first parent invocation from the repository root failed because no root `package.json` exists; the exact command from the Frontend root produced the expected result.
 - T025 work-unit commit: Frontend `453100b` (`test(frontend): cover review soft deletion`), containing only the authorized test file.
+
+## T026–T028 Implementation and Verification — 2026-11-06
+
+- T026: Core commit `41a9ef1` retains the row and moderation status, updates only the deleted marker under the existing transaction/row lock, and makes repeated DELETE idempotent.
+- Route/risk: delegated implementation and fresh independent verification; high risk because of data integrity. The first implementation run had 40 passes and 5 skips without the DSN; this was not accepted as PostgreSQL verification. After the pause, independent verification and the parent repeat both ran all **45 tests with no skips** using a temporary matching `credit_test_<32 hex>` role/database in `bgg_reviews_test_db` at loopback port 55432.
+- Command: `cd bgg-shop-core && CREDIT_TEST_POSTGRES_DSN=<guarded temporary loopback DSN> python -m pytest -q tests/test_graphql_reviews.py`. Parent result: **45 passed, 1 warning in 5.99s**. Exact temporary role and database cleanup counts were both zero; no default/shared database was used.
+- An additional Core SDL runtime comparison failed on seven pre-existing description differences. Independent inspection found no field/type difference and confirmed `41a9ef1` did not change the SDL or schema declarations. This unrelated check is not claimed as passing.
+- T027: independent inspection confirmed the generic BFF action/cache retry code already covers DELETE and matches the canonical contract. Command: `cd bgg-shop-bff && PYTHONPATH=. python -m pytest -q tests/test_reviews.py tests/test_services_openapi_contract.py` — **57 passed**. Existing implementation commit `65edb84`, DELETE test commit `c6f1079`; no duplicate implementation was necessary.
+- T028: delegated direct Frontend implementation, medium risk. Commit `1fc3694` adds the accessible delete button and cache-refresh-pending coverage using the existing typed action API. RED **2 failed, 9 passed** became GREEN **12 passed**. `npm run lint` passed with **27 warnings, 0 errors**; `npm run build` and `git diff --check` passed.
+- Next: T029 isolated end-to-end soft-delete verification, then T030 documentation and T031 final focused checks. Engram mirror remains unavailable.
