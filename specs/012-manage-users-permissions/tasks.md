@@ -1,7 +1,7 @@
 # Tasks: Manage Users and Permissions (CU-A04)
 
 **Input**: [spec.md](spec.md), [requirements checklist](checklists/requirements.md)
-**Status**: T004–T010 are complete as investigation, planning and validated canonical contract work. T011, T014 and T017 are ready; later tasks remain pending their prerequisites.
+**Status**: T004–T011 are complete through the observed Core test-first RED. T012, T014 and T017 are ready; later tasks remain pending their prerequisites.
 **Branch**: `012-manage-users-permissions` in the orchestrator and all three service repositories.
 **Scope**: Local environments and disposable test data only. No staging, production, CI, remote validation, or real personal data.
 
@@ -10,9 +10,14 @@
 - **Strategy**: `ask-on-risk`; the user selected `stacked-to-main` as the chain strategy on 2026-11-06 after the projected authored feature diff exceeded approximately 400 lines.
 - **PR slicing**: Slice boundaries are not established yet. No push or PR creation is authorized.
 
+## Work-unit commits
+
+- **Contracts and T010 validation**: Core `7ee655e`, BFF `93d761a`, orchestrator docs `35e8fa3`.
+- **T011 Core tests / expected RED**: Core `d8247f2`.
+
 ## Backlog status and gates
 
-The three decision tasks are complete as records of explicit user approvals only; they are not implementation or test evidence. T004–T006 are complete read-only investigations, with evidence recorded below. T007 is complete as a technical planning artifact only. T008/T009 are complete as approved canonical contract work using the exact user-approved decisions recorded below. T010 passed independent validation; T011, T014 and T017 are now ready, while later tasks remain pending their listed prerequisites. No service behavior has been changed yet.
+The three decision tasks are complete as records of explicit user approvals only; they are not implementation or test evidence. T004–T006 are complete read-only investigations, with evidence recorded below. T007 is complete as a technical planning artifact only. T008/T009 are complete as approved canonical contract work using the exact user-approved decisions recorded below. T010 passed independent validation. T011's tests are authored and their expected RED was independently reproduced against disposable PostgreSQL; T012, T014 and T017 are now ready, while later tasks remain pending their listed prerequisites. No service behavior has been changed yet.
 
 The applicable canonical contracts remain Core `bgg-shop-core/specs/schema.graphql` and BFF `bgg-shop-bff/specs/openapi.yaml`; both contain the approved CU-A04 contract and passed structural and independent cross-contract validation. The Frontend generates types from the BFF OpenAPI using the existing `npm run generate:types` command; generation has not run. No runtime implementation, tests, or generated types were changed.
 
@@ -32,8 +37,8 @@ Global task IDs are stable across the master and service documents. Each ID has 
 | T008 | Core | DONE — approved canonical contract | T007 | FR-001–FR-008, FR-011; US1–US3 |
 | T009 | BFF | DONE — approved canonical contract | T007 | FR-001–FR-006, FR-008–FR-009, FR-011; US1–US3 |
 | T010 | Orchestrator | DONE — independent contract validation | T008, T009 | FR-001–FR-011; SC-001–SC-007 |
-| T011 | Core | READY — tests first | T007, T010 | FR-001–FR-009, FR-011; US1–US3 |
-| T012 | Core | BLOCKED — tests and contracts | T011, T010 | FR-001–FR-008, FR-011; US1–US3 |
+| T011 | Core | DONE — tests authored, expected RED observed | T007, T010 | FR-001–FR-009, FR-011; US1–US3 |
+| T012 | Core | READY — Core implementation | T011, T010 | FR-001–FR-008, FR-011; US1–US3 |
 | T013 | Core | BLOCKED — Core behavior | T012 | SC-001–SC-007 |
 | T014 | BFF | READY — tests first | T007, T010 | FR-001–FR-006, FR-008–FR-009, FR-011; US1–US3 |
 | T015 | BFF | BLOCKED — tests and Core behavior | T014, T012 | FR-001–FR-006, FR-008–FR-009, FR-011; US1–US3 |
@@ -134,8 +139,8 @@ Additional observed check: `git -C bgg-shop-core diff --check -- specs/schema.gr
 
 ## Phase 3: Core
 
-- [ ] **T011 [Core] [READY — tests first]** After T007 and T010, author deterministic Core tests first for Superadmin-only listing/selection and privilege changes; positive active `is_superuser=true, is_staff=false`; negative unauthenticated, inactive, staff-only, and operation-key-only contexts; grant/revoke of each flag while preserving the other; no implicit staff enablement; no partial updates when rejecting last-superuser revocation; self-demotion with another active Superadmin; concurrent revocations; active-session authorization freshness; and non-leaking errors. **Depends on**: T007, T010. **Acceptance**: expected failures are observed before behavior implementation and tests use disposable local data. Trace: FR-001–FR-009, FR-011; US1–US3.
-- [ ] **T012 [Core] [BLOCKED]** After T011 failures and T010 approval, implement only the approved Core contract and behavior. Enforce authenticated, active `is_superuser=true` independently of `is_staff`; preserve the untouched privilege; enforce the last-active-superuser invariant atomically under concurrency; and make saved changes effective for subsequent authorization checks in active sessions. Preserve already-correct operational staff access; do not introduce employee creation, a new role model, or unrelated access changes. **Acceptance**: unauthorized reads/writes and partial denied updates are absent; local disposable fixtures prove the invariant. Trace: FR-001–FR-008, FR-011; US1–US3.
+- [x] **T011 [Core] [DONE — tests authored, expected RED observed]** After T007 and T010, author deterministic Core tests first for Superadmin-only listing/selection and privilege changes; positive active `is_superuser=true, is_staff=false`; negative unauthenticated, inactive, staff-only, and operation-key-only contexts; case-insensitive substring search across email, first name, and last name; stable ascending user-ID cursor pagination with next-page continuation, default limit 50, and maximum 100; invalid search, limit, and cursor inputs returning `INVALID` with `field`; grant/revoke of each flag while preserving the other; no implicit staff enablement; no partial updates when rejecting last-superuser revocation; self-demotion with another active Superadmin; concurrent revocations; active-session authorization freshness; and sanitized authorization and `LAST_ACTIVE_SUPERUSER` errors that expose no traceback, internal URL, credential/password/secret, or DSN. **Depends on**: T007, T010. **Acceptance/evidence**: all approved behaviors have focused assertions. `python -m py_compile tests/test_user_permissions_postgres.py` passed. With a fresh loopback-only disposable PostgreSQL container, `pytest -q tests/test_user_permissions_postgres.py` produced 20 expected failures because the runtime GraphQL operations are not yet implemented and 1 passing registration test; no unexpected failures or skips. An independent reviewer reproduced the same result and verified container cleanup. This is TDD RED, not implementation evidence. Trace: FR-001–FR-009, FR-011; US1–US3.
+- [ ] **T012 [Core] [READY — Core implementation]** After T011 failures and T010 approval, implement only the approved Core contract and behavior. Enforce authenticated, active `is_superuser=true` independently of `is_staff`; preserve the untouched privilege; enforce the last-active-superuser invariant atomically under concurrency; and make saved changes effective for subsequent authorization checks in active sessions. Preserve already-correct operational staff access; do not introduce employee creation, a new role model, or unrelated access changes. **Acceptance**: unauthorized reads/writes and partial denied updates are absent; local disposable fixtures prove the invariant. Trace: FR-001–FR-008, FR-011; US1–US3.
 - [ ] **T013 [Core] [BLOCKED]** Run and record applicable Core pytest checks from T007, including independent flag updates, positive active superuser without staff, authorization negatives, last-superuser denial/self-demotion/concurrency, and session freshness. **Acceptance**: focused local checks pass or failures are accurately recorded; no non-local environment is used. Trace: SC-001–SC-007.
 
 ## Phase 4: BFF

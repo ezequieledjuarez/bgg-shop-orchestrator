@@ -2,7 +2,7 @@
 
 **Feature dir**: `specs/012-manage-users-permissions` | **Date**: 2026-11-06
 
-**Status**: Technical plan and approved contracts validated; runtime behavior and tests remain pending.
+**Status**: Technical plan and approved contracts validated; T011 observed expected RED; Core implementation remains pending.
 
 ## Summary
 
@@ -85,15 +85,21 @@ No contract decision remains unresolved. T010 passed the independent SDL/OpenAPI
 
 ## Test Plan: Files and Selectors
 
-These are planned files/selectors; they do not yet exist and are not test evidence.
+The Core test file and selectors below have been authored. On 2026-11-06, the suite ran against a dedicated disposable local PostgreSQL database: 20 tests failed as expected because the runtime operations are absent, and the registration test passed. An independent verifier reproduced the result. This is test-first RED evidence only, not functional implementation evidence; runs without the DSN skip the suite.
 
 ### Core — `bgg-shop-core/tests/test_user_permissions_postgres.py`
 
-Follow the disposable, loopback-only PostgreSQL pattern used by `test_admin_sales_metrics_postgres.py`. Require a unique disposable test database/role and isolated schema before DDL; do not use the active `saleor` database or the Core default DB. Exercise real ORM row locks with separate DB connections/transactions for concurrency.
+Follow the disposable, loopback-only PostgreSQL pattern used by `test_admin_sales_metrics_postgres.py`. Read only `USER_PERMISSIONS_TEST_POSTGRES_DSN`; if it is absent, skip these opt-in tests. If it is present but invalid, fail closed before connecting. Require a PostgreSQL URL whose host is exactly `127.0.0.1`, whose port is explicit, whose password is nonempty, and whose database name and username are the same `user_permissions_test_<32 lowercase hex>` value. Reject query parameters and fragments. Never fall back to Django's configured/default `saleor` database, and never create or drop a database or role.
+
+After validating the DSN, temporarily configure Django's default connection to that exact disposable database/role, verify `current_database()` and `current_user`, then create a random per-run schema and set the connection search path to that schema. Create test tables only inside that schema and always drop only that schema in fixture cleanup, including on test failure. Do not print the DSN or credentials. Exercise real ORM row locks with separate DB connections/transactions for concurrency.
 
 Planned pytest selectors:
 
 - `test_user_list_requires_active_superuser_not_staff`
+- `test_user_list_search_is_case_insensitive_substring_across_user_fields`
+- `test_user_list_cursor_paginates_ascending_ids_with_default_and_max_limits`
+- `test_user_list_invalid_search_limit_and_cursor_include_invalid_field`
+- `test_user_list_and_last_superuser_errors_are_sanitized`
 - `test_operation_key_only_cannot_list_or_update_users`
 - `test_privilege_update_changes_only_requested_flag`
 - `test_superuser_without_staff_can_list_and_update_privileges`
@@ -106,10 +112,10 @@ Planned pytest selectors:
 Focused invocation, from `bgg-shop-core/`, once the dedicated disposable PostgreSQL DSN is configured:
 
 ```sh
-pytest tests/test_user_permissions_postgres.py
+pytest -q tests/test_user_permissions_postgres.py
 ```
 
-Configure the disposable test connection through `USER_PERMISSIONS_TEST_POSTGRES_DSN`. The test fixture must fail closed if the DSN is missing or is not a loopback disposable test DB, following the safety properties in the existing sales metrics test; do not print the DSN or credentials.
+Configure the disposable test connection through `USER_PERMISSIONS_TEST_POSTGRES_DSN`; absence means the tests skip, while any present but invalid DSN is a hard failure. The fixture must not consult or use Django's configured/default database as a fallback.
 
 ### BFF — `bgg-shop-bff/tests/test_admin_users.py`
 
