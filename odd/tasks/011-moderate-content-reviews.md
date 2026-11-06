@@ -48,8 +48,9 @@ The approved feature specification defines a staff/superuser moderation queue an
 - [x] T017–T022: Implement and locally verify rejection and restoration (US2); final isolated E2E result is recorded below.
 - [x] T023–T025: Author Core, BFF, and Frontend soft-delete tests before implementation; Core observed RED, BFF passed, and Frontend observed expected RED.
 - [x] T026–T028: Implement Core soft deletion, confirm existing BFF DELETE handling, and add the Frontend delete action.
-- [ ] T029: Verify soft deletion through the isolated local stack.
-- [ ] T030–T031: Complete local documentation and focused functional validation.
+- [x] T029: Verify soft deletion through the isolated local stack.
+- [x] T030: Document approved compatibility decisions, local setup, and observed T029 evidence.
+- [ ] T031: Run final focused local Core/BFF/Frontend checks and the end-to-end moderation flow.
 
 ## Progress and Verification
 
@@ -267,4 +268,15 @@ Historical next-step note: after T012 implementation, the independent BFF verifi
 - An additional Core SDL runtime comparison failed on seven pre-existing description differences. Independent inspection found no field/type difference and confirmed `41a9ef1` did not change the SDL or schema declarations. This unrelated check is not claimed as passing.
 - T027: independent inspection confirmed the generic BFF action/cache retry code already covers DELETE and matches the canonical contract. Command: `cd bgg-shop-bff && PYTHONPATH=. python -m pytest -q tests/test_reviews.py tests/test_services_openapi_contract.py` — **57 passed**. Existing implementation commit `65edb84`, DELETE test commit `c6f1079`; no duplicate implementation was necessary.
 - T028: delegated direct Frontend implementation, medium risk. Commit `1fc3694` adds the accessible delete button and cache-refresh-pending coverage using the existing typed action API. RED **2 failed, 9 passed** became GREEN **12 passed**. `npm run lint` passed with **27 warnings, 0 errors**; `npm run build` and `git diff --check` passed.
-- Next: T029 isolated end-to-end soft-delete verification, then T030 documentation and T031 final focused checks. Engram mirror remains unavailable.
+- At this T028 checkpoint, next was T029 isolated end-to-end soft-delete verification, followed by T030 documentation and T031 final focused checks. Engram mirror remains unavailable.
+
+## T029–T030 Soft-Delete Integration and Documentation — 2026-11-06
+
+- T029 route: delegated direct; high risk because the path changes persisted moderation state and public aggregation. Parent spot-check remains pending. E2E writer commit: Frontend `a2be4ec` (`test(frontend): verify review soft-delete integration`).
+- The existing isolated DB/Redis/Core/BFF services remained on loopback ports 55432/56379/18001/5001. To avoid occupied port 3000, Vite ran locally on 127.0.0.1:3001 with `VITE_API_BASE_URL=http://localhost:3001/api/v1`; the preview and isolated Core/BFF health checks returned HTTP 200.
+- E2E command from `bgg-shop-frontend`: `VITE_API_BASE_URL=http://localhost:3001/api/v1 E2E_OPKEY_ISOLATED=true C03_DISPOSABLE_REVIEW_E2E=true npx playwright test tests/e2e/product-reviews.spec.ts --grep "moderator accepts" --project=chromium --workers=1`. One initial run failed because the new test filtered for ACCEPTED before accepting the review; after changing the lookup to the unfiltered queue, the final run passed **1 test (9.4s)**.
+- The test used the UI to submit, accept, reject, restore, and delete a review; it checked the retained ACCEPTED status in the response, `deleted=true`, public exclusion, count/average reset, queue exclusion, repeated DELETE success, and sanitized 404 for ACCEPT on the deleted row.
+- Core deterministic verification ran on isolated PostgreSQL with a generated `credit_test_<32 hex>` role/database: focused migration, retained-row, and concurrent serialization cases **4 passed, 41 deselected, 1 Django warning in 4.53s**. The temporary database and role were removed in `finally`; exact-name post-cleanup counts were both zero.
+- BFF cache-refresh exhaustion: `cd bgg-shop-bff && PYTHONPATH=. python -m pytest -q tests/test_reviews.py -k retry_exhaustion_preserves_committed_success_as_pending` — **3 passed, 48 deselected, 3 existing UTC deprecation warnings**. This uses Flask `test_client` with mocked Core and cache invalidation; it is not live Redis-failure verification.
+- T030 updated `specs/011-moderate-content-reviews/quickstart.md` with authoritative contract ownership, reversible compatibility mapping, approved deletion/cache semantics, local port selection, exact T029 commands and outcomes, and the mocked/live verification boundary. `git diff --check` passed for all three authorized root documentation files.
+- T031 remains pending. Its prescribed full focused Core (with guarded DSN), BFF, Frontend test/build, and final E2E commands have not yet been run in this task.
