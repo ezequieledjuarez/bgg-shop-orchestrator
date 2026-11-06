@@ -50,7 +50,7 @@ The approved feature specification defines a staff/superuser moderation queue an
 - [x] T026–T028: Implement Core soft deletion, confirm existing BFF DELETE handling, and add the Frontend delete action.
 - [x] T029: Verify soft deletion through the isolated local stack.
 - [x] T030: Document approved compatibility decisions, local setup, and observed T029 evidence.
-- [ ] T031: Run final focused local Core/BFF/Frontend checks and the end-to-end moderation flow.
+- [x] T031: Run final focused local Core/BFF/Frontend checks and the end-to-end moderation flow.
 
 ## Progress and Verification
 
@@ -270,7 +270,7 @@ Historical next-step note: after T012 implementation, the independent BFF verifi
 - T028: delegated direct Frontend implementation, medium risk. Commit `1fc3694` adds the accessible delete button and cache-refresh-pending coverage using the existing typed action API. RED **2 failed, 9 passed** became GREEN **12 passed**. `npm run lint` passed with **27 warnings, 0 errors**; `npm run build` and `git diff --check` passed.
 - At this T028 checkpoint, next was T029 isolated end-to-end soft-delete verification, followed by T030 documentation and T031 final focused checks. Engram mirror remains unavailable.
 
-## T029–T030 Soft-Delete Integration and Documentation — 2026-11-06
+## T029–T031 Soft-Delete Integration, Documentation, and Final Checks — 2026-11-06
 
 - T029 route: delegated direct; high risk because the path changes persisted moderation state and public aggregation. Parent spot-check remains pending. E2E writer commit: Frontend `a2be4ec` (`test(frontend): verify review soft-delete integration`).
 - The existing isolated DB/Redis/Core/BFF services remained on loopback ports 55432/56379/18001/5001. To avoid occupied port 3000, Vite ran locally on 127.0.0.1:3001 with `VITE_API_BASE_URL=http://localhost:3001/api/v1`; the preview and isolated Core/BFF health checks returned HTTP 200.
@@ -278,5 +278,11 @@ Historical next-step note: after T012 implementation, the independent BFF verifi
 - The test used the UI to submit, accept, reject, restore, and delete a review; it checked the retained ACCEPTED status in the response, `deleted=true`, public exclusion, count/average reset, queue exclusion, repeated DELETE success, and sanitized 404 for ACCEPT on the deleted row.
 - Core deterministic verification ran on isolated PostgreSQL with a generated `credit_test_<32 hex>` role/database: focused migration, retained-row, and concurrent serialization cases **4 passed, 41 deselected, 1 Django warning in 4.53s**. The temporary database and role were removed in `finally`; exact-name post-cleanup counts were both zero.
 - BFF cache-refresh exhaustion: `cd bgg-shop-bff && PYTHONPATH=. python -m pytest -q tests/test_reviews.py -k retry_exhaustion_preserves_committed_success_as_pending` — **3 passed, 48 deselected, 3 existing UTC deprecation warnings**. This uses Flask `test_client` with mocked Core and cache invalidation; it is not live Redis-failure verification.
-- T030 updated `specs/011-moderate-content-reviews/quickstart.md` with authoritative contract ownership, reversible compatibility mapping, approved deletion/cache semantics, local port selection, exact T029 commands and outcomes, and the mocked/live verification boundary. `git diff --check` passed for all three authorized root documentation files.
-- T031 remains pending. Its prescribed full focused Core (with guarded DSN), BFF, Frontend test/build, and final E2E commands have not yet been run in this task.
+- T030 updated `specs/011-moderate-content-reviews/quickstart.md` with authoritative contract ownership, reversible compatibility mapping, approved deletion/cache semantics, local port selection, exact T029 commands and outcomes, and the mocked/live verification boundary. Root documentation commit: `f7c6886` (`docs(spec): record review soft-delete integration`); `git diff --check` passed.
+- T031 route: delegated direct validation; high risk because it verifies retained persistent state, row-lock behavior, rollback, and public visibility. The parent spot-check remains requested.
+- Core final command: `cd bgg-shop-core && CREDIT_TEST_POSTGRES_DSN=<guarded temporary loopback DSN> python -m pytest -q tests/test_graphql_reviews.py` — **45 passed, 0 skipped, 1 Django warning in 6.07s**. A generated `credit_test_<32 hex>` role/database was dropped in `finally`; exact-name post-cleanup counts were zero.
+- BFF final command: `cd bgg-shop-bff && PYTHONPATH=. python -m pytest -q tests/test_reviews.py tests/test_services_openapi_contract.py` — **57 passed, 49 existing `datetime.utcnow()` deprecation warnings in 8.25s**.
+- Frontend final command: `cd bgg-shop-frontend && npm test -- --run src/admin/reviews/ReviewsPanel.test.tsx && npm run build` — **12 passed**, then TypeScript and Vite build passed.
+- Final local E2E command used Vite on loopback 3001 and the isolated Core/BFF ports — **1 passed (8.2s)**. No tests failed or skipped in the final checks. The known SDL comparison still has seven pre-existing description-only differences and no field/type drift; it was excluded and is not claimed as passing.
+- Cleanup: the preview was stopped, temp role/database counts were zero, and only the four exact `bgg_reviews_test_*` containers were stopped. Podman needed SIGKILL for the isolated BFF after its 10-second SIGTERM timeout; filtered status then showed no isolated containers running. The default stack was not contacted or changed.
+- T031 results and command details are in the quickstart. Engram mirror remains unavailable.

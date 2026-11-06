@@ -1,7 +1,7 @@
 # Tasks: CU-A03 — Moderate Content and Reviews
 
 **Input**: `specs/011-moderate-content-reviews/{spec,plan,research,data-model,quickstart}.md` and the two planning drafts in `contracts/`.
-**Planning status**: T001–T030 are recorded complete below. T026 passed all 45 focused Core tests with guarded disposable PostgreSQL and independent inspection; T027 passed all 57 BFF review/contract tests using existing generic DELETE handling; T028 passed 12 Frontend tests, lint (27 warnings), and build. T029 soft-delete integration and T030 documentation are complete; T031 final focused checks remain pending. The approved Core and BFF definitions are promoted and locally validated.
+**Planning status**: T001–T031 are recorded complete below. T026 passed all 45 focused Core tests with guarded disposable PostgreSQL and independent inspection; T027 passed all 57 BFF review/contract tests using existing generic DELETE handling; T028 passed 12 Frontend tests, lint (27 warnings), and build. T029 soft-delete integration, T030 documentation, and T031 final focused checks are complete. The approved Core and BFF definitions are promoted and locally validated.
 **Scope**: Local project only. Do not run staging, production, CI, or remote validation.
 **Tests**: Included because the specification and quickstart require independent functional evidence.
 
@@ -97,7 +97,7 @@ Tasks are dependency-ordered and grouped by user story. Project ownership is sta
 **Purpose**: Run final local-only checks and keep the feature quickstart evidence accurate.
 
 - [x] T030 Local integration/docs: Document the approved compatibility and contract decisions, local setup, and functional verification commands/results in `specs/011-moderate-content-reviews/quickstart.md` without recording unrun checks as passed (depends on T029). The quickstart now records canonical contract ownership, reversible status mapping, deletion semantics, local port isolation, T029 outcomes, and which cache behavior is mock-based.
-- [ ] T031 Local integration: Run the focused local Core tests with `cd bgg-shop-core && python -m pytest tests/test_graphql_reviews.py`, BFF tests with `cd bgg-shop-bff && python -m pytest tests/test_reviews.py tests/test_services_openapi_contract.py`, and Frontend tests/build with `cd bgg-shop-frontend && npm test -- --run src/admin/reviews/ReviewsPanel.test.tsx && npm run build`; then verify the local end-to-end moderation flow and record exact outcomes in `specs/011-moderate-content-reviews/quickstart.md` (depends on T030).
+- [x] T031 Local integration: Run the focused local Core tests with `cd bgg-shop-core && python -m pytest tests/test_graphql_reviews.py`, BFF tests with `cd bgg-shop-bff && python -m pytest tests/test_reviews.py tests/test_services_openapi_contract.py`, and Frontend tests/build with `cd bgg-shop-frontend && npm test -- --run src/admin/reviews/ReviewsPanel.test.tsx && npm run build`; then verify the local end-to-end moderation flow and record exact outcomes in `specs/011-moderate-content-reviews/quickstart.md` (depends on T030). Final local results: Core **45 passed, 0 skipped, 1 warning** with disposable PostgreSQL; BFF **57 passed, 49 existing warnings**; Frontend **12 passed and build passed**; E2E **1 passed**. Exact commands, temporary role/database cleanup, isolated service shutdown, and the known unrelated SDL-comparison failure are documented in the quickstart.
 
 ## Dependencies & Execution Order
 
