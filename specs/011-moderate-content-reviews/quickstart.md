@@ -116,3 +116,16 @@ Additional deterministic checks for T029, run against local fixtures:
 - BFF: `cd bgg-shop-bff && PYTHONPATH=. python -m pytest -q tests/test_reviews.py -k retry_exhaustion_preserves_committed_success_as_pending` — **3 passed, 48 deselected, 3 existing `datetime.utcnow()` deprecation warnings in 1.18s**. This is a Flask test-client check with mocked Core and cache invalidation; it proves committed-success/pending behavior, but it does not simulate a live Redis outage or cross-service HTTP request.
 
 The Core row-retention and rollback/concurrency evidence uses the disposable PostgreSQL test database. The BFF cache-pending case is intentionally mock-based; the end-to-end DELETE itself used the local HTTP stack and actual database.
+
+## T031 Final focused checks — 2026-11-06
+
+All commands below ran locally. The Core checks used a generated `credit_test_<32 hex>` user/database inside `bgg_reviews_test_db`, with the DSN restricted to `127.0.0.1:55432`.
+
+- Core: `cd bgg-shop-core && CREDIT_TEST_POSTGRES_DSN=<guarded temporary loopback DSN> python -m pytest -q tests/test_graphql_reviews.py` — **45 passed, 0 skipped, 1 Django warning in 6.07s**. This includes migration forward/rollback, soft-delete retention/public aggregation, and row-lock concurrency coverage. The temporary database and role were dropped in `finally`; exact-name cleanup counts were both zero.
+- BFF: `cd bgg-shop-bff && PYTHONPATH=. python -m pytest -q tests/test_reviews.py tests/test_services_openapi_contract.py` — **57 passed, 49 existing `datetime.utcnow()` deprecation warnings in 8.25s**.
+- Frontend: `cd bgg-shop-frontend && npm test -- --run src/admin/reviews/ReviewsPanel.test.tsx && npm run build` — **12 component tests passed**; TypeScript check and Vite production build passed.
+- End-to-end: `cd bgg-shop-frontend && VITE_API_BASE_URL=http://localhost:3001/api/v1 E2E_OPKEY_ISOLATED=true C03_DISPOSABLE_REVIEW_E2E=true npx playwright test tests/e2e/product-reviews.spec.ts --grep "moderator accepts" --project=chromium --workers=1` — **1 passed (8.2s)** after the focused suites. This exercised the actual local BFF/Core/database action flow and the accessible frontend delete action.
+
+No final focused suite failed or skipped. The earlier failed E2E attempt caused by the test's premature ACCEPTED-only queue filter is retained in the T029 record above. A known unrelated Core generated-schema SDL comparison previously failed on seven description-only differences; inspection found no type/field drift, this comparison was not rerun here, and it is not claimed as passed or caused by the soft-delete change.
+
+Cleanup: the frontend preview on port 3001 was stopped. The temporary Core role/database are absent (counts 0/0). Only the four `bgg_reviews_test_*` containers were stopped; Podman warned that the isolated BFF did not stop on SIGTERM within 10 seconds and used SIGKILL. A filtered container check observed zero remaining `bgg_reviews_test_*` running containers. No default `saleor_db`, its API, or its network was contacted or changed.
