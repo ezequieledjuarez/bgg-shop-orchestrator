@@ -210,6 +210,7 @@ for role, active, staff, superuser in [
     ('superadmin', True, False, True), ('staff', True, True, False),
     ('target', True, False, False), ('selfdemoter', True, False, True),
     ('inactive', False, False, True), ('solo', True, False, True),
+    ('race-a', True, False, True), ('race-b', True, False, True),
 ]:
     email = role + '-' + os.environ['E2E_SPEC012_RUN_ID'] + '@example.test'
     user = get_user_model().objects.create_user(
@@ -227,7 +228,7 @@ print(json.dumps({'inactive_token': inactive_token}))
     seeded = json.loads(run([python, "-c", seed], cwd=root / "bgg-shop-core", child_env=service_env, timeout=90))
     inactive_token = seeded["inactive_token"]
     private.append(inactive_token)
-    print("READY seed: six synthetic accounts; inactive Superadmin and solo-invariant actor; is_staff=false", flush=True)
+    print("READY seed: eight synthetic accounts; inactive Superadmin and solo/race actors; is_staff=false", flush=True)
 
     reservations[0].close()
     core = start("Core", [python, "-c", bootstrap + f"""
