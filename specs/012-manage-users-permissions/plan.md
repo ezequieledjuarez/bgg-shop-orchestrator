@@ -2,7 +2,7 @@
 
 **Feature dir**: `specs/012-manage-users-permissions` | **Date**: 2026-11-06
 
-**Status**: Technical plan and approved contracts validated; T011 observed expected RED; Core implementation remains pending.
+**Status**: T011 expected RED was observed; T012 implementation and the dedicated PostgreSQL regression file are locally verified. The broader Core auth/products command recorded three unrelated existing failures; see `tasks.md`.
 
 ## Summary
 
@@ -78,7 +78,7 @@ No contract decision remains unresolved. T010 passed the independent SDL/OpenAPI
 
 1. **T008/T009 — Approve both canonical contracts**: record the approved personnel listing and single-flag update semantics, authorization, safe projection, search/paging, discriminator, and sanitized error mapping in Core `bgg-shop-core/specs/schema.graphql` and BFF `bgg-shop-bff/specs/openapi.yaml`. These contract tasks are complete; no runtime behavior was changed.
 2. **T010 — Independently validate before behavior work (complete)**: the independent review found no high-confidence blockers; Core SDL and BFF OpenAPI structural validation passed, and the parent spot-check passed. Evidence is recorded in `tasks.md`.
-3. **T011/T012 — Core tests then implementation**: author the PostgreSQL-backed tests below first; verify expected failures; implement only approved operations with active bearer Superadmin enforcement, per-request DB permissions, field-specific writes, and transactional locking.
+3. **T011/T012 — Core tests then implementation (complete locally)**: author the PostgreSQL-backed tests below first; verify expected failures; implement only approved operations with active bearer Superadmin enforcement, per-request DB permissions, field-specific writes, and transactional locking. T012's focused regressions and full test file passed against a disposable loopback PostgreSQL 15 container.
 4. **T014/T015 — BFF tests then implementation**: test identity propagation and denials first; implement dedicated bearer-only Superadmin routes and sanitized errors without changing operational guards.
 5. **T017/T018/T019 — Generated types and UI**: regenerate types from the approved OpenAPI with the existing command; write panel/routing tests; add the route/panel only after the tests and generated types. Preserve operational navigation for staff.
 6. **T013/T016/T020/T021 — Local verification**: run the exact focused suites listed below, then applicable local integration/E2E checks against disposable data. Record only commands actually run and outcomes. No CI, staging, production, remote validation, or real personal data.
@@ -100,14 +100,19 @@ Planned pytest selectors:
 - `test_user_list_cursor_paginates_ascending_ids_with_default_and_max_limits`
 - `test_user_list_invalid_search_limit_and_cursor_include_invalid_field`
 - `test_user_list_and_last_superuser_errors_are_sanitized`
+- `test_user_list_operational_error_is_sanitized`
+- `test_privilege_update_operational_error_is_sanitized`
 - `test_operation_key_only_cannot_list_or_update_users`
 - `test_privilege_update_changes_only_requested_flag`
 - `test_superuser_without_staff_can_list_and_update_privileges`
 - `test_last_active_superuser_revocation_is_denied_without_partial_update`
 - `test_last_superuser_self_demotion_requires_another_active_superuser`
 - `test_concurrent_superuser_revocations_preserve_one_active_superuser`
+- `test_promotion_then_concurrent_actor_revocation_refreshes_qualifying_set`
 - `test_existing_bearer_token_uses_updated_privileges_on_next_request`
 - `test_registration_does_not_assign_staff_or_superuser`
+
+T012 review regressions (expected RED observed before implementation; GREEN verified locally): the promotion/revocation lock-state test and both synthetic database-error sanitization tests passed (3 passed, 21 deselected), and the complete PostgreSQL file passed (24 passed). The race regression now serializes superuser-flag writes with a transaction-scoped PostgreSQL advisory lock before reading the active-superuser set; the subsequent READ COMMITTED query sees the committed promotion. Both public database-error paths catch `DatabaseError` outside the failed write transaction (or narrowly around list evaluation), log static messages, and expose generic `SERVER_ERROR` results without exception details. An initial focused attempt exposed a missing import (one of three focused checks failed); after correction, the focused and full runs passed. The separate `python -m pytest -q tests/test_graphql_auth.py tests/test_graphql_products.py` run recorded 55 passed and 3 unrelated failures: existing review SDL description drift and two product-review SQL assertions expecting `APPROVED` while the implementation uses `ACCEPTED`. No tests or SDL were changed; these broader failures remain outside T012.
 
 Focused invocation, from `bgg-shop-core/`, once the dedicated disposable PostgreSQL DSN is configured:
 
@@ -121,14 +126,15 @@ Configure the disposable test connection through `USER_PERMISSIONS_TEST_POSTGRES
 
 Use Flask's test client and mocked Core identity/GraphQL responses, following `tests/test_admin_sales_metrics.py`. Verify unauthenticated, inactive, staff-only and operation-key-only denials; active `is_superuser=true, is_staff=false` acceptance; request carries one flag only; sanitized failures; and no change to staff-or-superuser operational admin behavior.
 
-Planned pytest selectors:
+Implemented pytest cases:
 
-- `test_user_routes_require_bearer_superuser`
-- `test_user_routes_reject_operation_key_only`
-- `test_user_routes_allow_superuser_without_staff`
-- `test_privilege_update_forwards_only_selected_flag`
-- `test_last_superuser_error_is_sanitized`
-- `test_operational_admin_guard_still_allows_staff`
+- `test_inactive_bearer_uses_core_forbidden_response`
+- `test_user_listing_forwards_bearer_and_filters`
+- `test_privilege_patch_changes_only_the_selected_flag_and_propagates_bearer`
+- `test_core_denials_are_mapped_without_identity_preflight`
+- `test_operation_key_alone_cannot_list_or_change_users`
+- `test_last_active_superuser_error_is_conflict_and_excludes_upstream_detail`
+- `test_upstream_exception_is_sanitized_for_user_listing`
 
 Focused invocation, from `bgg-shop-bff/`:
 
@@ -136,38 +142,37 @@ Focused invocation, from `bgg-shop-bff/`:
 pytest tests/test_admin_users.py tests/test_admin_sales_metrics.py
 ```
 
-### Frontend — `bgg-shop-frontend/src/admin/users/UsersPanel.test.tsx`
+### Frontend — `bgg-shop-frontend/src/admin/users/UserManagementPanel.test.tsx`
 
-Use Vitest, Testing Library and MSW, matching `src/admin/audit/AuditPanel.test.tsx`. Keep query assertions accessible by role/label. Proposed accessible selectors: `getByRole('heading', { name: 'Usuarios' })`, `getByRole('checkbox', { name: 'Acceso operativo (staff)' })`, `getByRole('checkbox', { name: 'Superadmin' })`, and `getByRole('button', { name: 'Guardar cambios' })`.
+Use Vitest, Testing Library and MSW, matching `src/admin/audit/AuditPanel.test.tsx`. Keep query assertions accessible by role/label. Implemented accessible selectors include the heading `Administración de usuarios`, checkboxes `Personal de administración` and `Superadministrador`, and button `Guardar cambios`.
 
-Planned Vitest selectors:
+Covered Vitest behaviors:
 
-- `shows_user_selection_for_authorized_superadmin`
-- `keeps_operational_admin_navigation_available`
-- `submits_staff_and_superuser_changes_independently`
-- `retains_confirmed_flags_and_reports_update_failure`
-- `does_not_expose_user_selection_to_staff`
+- `searches and selects existing users, and saves each privilege independently`
+- `does not expose personnel after the listing endpoint refuses access`
+- `keeps operational admin destinations in navigation and offers no employee onboarding flow`
+- `shows a safe failure and preserves the saved superuser value after a rejected revocation`
 
 Focused invocation, from `bgg-shop-frontend/`:
 
 ```sh
-npm test -- --run src/admin/users/UsersPanel.test.tsx
+npm --prefix bgg-shop-frontend test -- --run src/admin/users/UserManagementPanel.test.tsx
 ```
 
 ### Local integration / browser check
 
-Planned E2E file: `bgg-shop-frontend/tests/e2e/admin-users.spec.ts`, using the existing Playwright setup and isolated local environment. Tag the CU-A04 flow `@cu-a04` and use accessible selectors matching the component tests. Cover Superadmin selection/update, staff denial for personnel data, staff access to an existing operational route, and a same-token request after demotion. Run only against disposable local Core/BFF/frontend services and users:
+E2E file: `bgg-shop-frontend/tests/e2e/admin-users.spec.ts`, using the isolated local harness `scripts/run-spec012-local-e2e.sh`. The harness creates a disposable loopback PostgreSQL container with tmpfs data and synthetic accounts, starts Core/BFF/Frontend on random loopback ports, disables shared Playwright login/storage state, uses the installed local Chromium without downloads, and cleans up only its own resources. The reported run passed all 8 Chromium scenarios: independent staff/superuser flag changes and persistence; staff denial/data hiding with operational access; same-bearer denial after self-demotion; missing-authentication 401; invalid-bearer 401; fake operation-key-only 403; inactive-valid-bearer 403; and last-active-Superadmin denial with 409 and unchanged state. Harness cleanup verified its owned services and Playwright processes exited, its unique tmpfs PostgreSQL container/database were removed, and its temporary run directory was deleted. Full-stack concurrent revocations remain untested.
 
 ```sh
-npx playwright test tests/e2e/admin-users.spec.ts --grep @cu-a04
+bash scripts/run-spec012-local-e2e.sh
 ```
 
-Before feature E2E is added, the relevant current regression checks are the Core and BFF files above (`test_admin_sales_metrics_postgres.py` and `test_admin_sales_metrics.py`) plus the frontend existing admin panel tests. Do not claim the new planned tests or checks have run as part of T007.
+Core service-level concurrency tests are separate and do not substitute for the unrun full-stack concurrent-revocation case. Record E2E evidence only from the isolated runner above. Never use default Compose resources, ambient credentials, non-local environments, or real personal data.
 
 ## Risks and Mitigations
 
-- **Concurrent update race**: use the same ordered PostgreSQL row-lock protocol for every superuser-flag write, inside one transaction; prove with parallel DB connections and reread the committed state.
-- **Stale browser/token role state**: Core reloads the active user from DB per bearer request; BFF checks current Core identity on each new management request. UI state is not authorization.
+- **Concurrent update race**: serialize every superuser-flag write with the same PostgreSQL transaction-scoped advisory lock before materializing the active-superuser set; prove with parallel DB connections and reread the committed state.
+- **Stale browser/token role state**: Core reloads the active user from DB per bearer request; each BFF management operation delegates to the Core resolver, which authorizes from current saved state. UI state is not authorization.
 - **Operation-key bypass**: existing shared admin middleware permits operation-key sessions. New endpoints use a distinct bearer-only guard at BFF and reject the delegated path in Core.
 - **Accidental operational regression**: leave all broad operational authorization paths unchanged and run the existing sales/admin role-parity tests.
 - **Contract drift or sensitive user data**: approve and cross-check SDL/OpenAPI before behavior; explicitly exclude credentials and authentication secrets from all listing and update payloads.
