@@ -191,6 +191,7 @@ CREATE TABLE IF NOT EXISTS product_review (
     rating SMALLINT NOT NULL,
     body VARCHAR(2000) NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_product_review_product
@@ -208,12 +209,12 @@ CREATE TABLE IF NOT EXISTS product_review (
     CONSTRAINT chk_product_review_body
         CHECK (char_length(btrim(body)) BETWEEN 1 AND 2000),
     CONSTRAINT chk_product_review_status
-        CHECK (status IN ('PENDING', 'APPROVED', 'HIDDEN', 'DELETED'))
+        CHECK (status IN ('PENDING', 'ACCEPTED', 'REJECTED'))
 );
 
-CREATE INDEX IF NOT EXISTS idx_product_review_approved_game
+CREATE INDEX IF NOT EXISTS idx_product_review_public_game
     ON product_review (bgg_id, created_at)
-    WHERE status = 'APPROVED';
+    WHERE status = 'ACCEPTED' AND is_deleted = FALSE;
 
 CREATE INDEX IF NOT EXISTS idx_product_review_user
     ON product_review (user_id);
@@ -386,4 +387,3 @@ CREATE INDEX IF NOT EXISTS idx_opkeys_key_hash ON opkeys_opsession (key_hash);
 -- Ejemplo de inserción (opcional): crear una sesión de operación para pruebas.
 -- INSERT INTO opkeys_opsession (id, user_id, key_hash, ops, issued_at, expires_at)
 -- VALUES ('00000000-0000-0000-0000-000000000001', NULL, 'EXAMPLE_HASH', '["GET:/graphql"]', now(), now() + interval '30 minutes')
-
