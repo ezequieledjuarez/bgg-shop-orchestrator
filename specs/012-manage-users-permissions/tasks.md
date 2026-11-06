@@ -15,6 +15,7 @@
 - **Contracts and T010 validation**: Core `7ee655e`, BFF `93d761a`, orchestrator docs `35e8fa3`.
 - **T011 Core tests / expected RED**: Core `d8247f2`; orchestrator evidence `dcac07e`.
 - **Feature implementation and initial integration evidence**: Core `73cae83`, BFF `110af16`, Frontend `48df07d`, orchestrator `2e1edce`.
+- **T021 concurrent full-stack E2E proof**: Frontend `501aa6a`; orchestrator harness and evidence `6f1af5a`.
 
 ## Backlog status and gates
 
