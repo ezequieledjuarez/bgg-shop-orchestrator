@@ -1,0 +1,82 @@
+"""
+PLANNING DRAFT ONLY — not the Core source-of-truth SDL.
+It records confirmed CU-A03 decisions and must be promoted by a future Core contract task.
+"""
+
+enum ReviewModerationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum ReviewModerationAction {
+  ACCEPT
+  REJECT
+  DELETE
+}
+
+type AdminReview {
+  id: ID!
+  gameBggId: Int!
+  gameName: String!
+  rating: Int!
+  body: String!
+  createdAt: String!
+  """Retained moderation status; soft-deleted records are omitted from the queue."""
+  status: ReviewModerationStatus!
+  deleted: Boolean!
+  publiclyVisible: Boolean!
+}
+
+type AdminReviewPage {
+  items: [AdminReview!]!
+  page: Int!
+  pageSize: Int!
+  total: Int!
+  totalPages: Int!
+}
+
+type ReviewModerationError {
+  """Stable code such as REVIEW_NOT_FOUND or INVALID_TRANSITION."""
+  field: [String!]
+  code: String!
+  message: String!
+}
+
+type ModerateReviewPayload {
+  success: Boolean!
+  review: AdminReview
+  userErrors: [ReviewModerationError!]!
+}
+
+extend type Query {
+  """
+  Requires an authenticated active staff or superuser identity. An operation
+  key without an active user identity is insufficient. Lists non-deleted
+  reviews filtered by an optional single status. page is one-based and defaults
+  to 1; pageSize defaults to 50 (maximum 100). Results are ordered by createdAt
+  DESC then id DESC. Authorization errors use UNAUTHENTICATED or FORBIDDEN.
+  """
+  adminReviews(
+    status: ReviewModerationStatus
+    page: Int = 1
+    pageSize: Int = 50
+  ): AdminReviewPage!
+}
+
+extend type Mutation {
+  """
+  Requires an authenticated active staff or superuser identity. An operation
+  key without an active user identity is insufficient. Core is authoritative
+  for state and locks the review row to serialize actions; the last serialized
+  action is final. Same-state ACCEPT/REJECT and repeated DELETE are idempotent
+  success. Unknown IDs and non-delete actions on soft-deleted reviews report
+  REVIEW_NOT_FOUND (mapped to HTTP 404 by the BFF); only a genuinely invalid
+  transition reports INVALID_TRANSITION (mapped to HTTP 409). DELETE sets a
+  separate soft-delete marker and retains the current moderation status.
+  """
+  moderateReview(
+    reviewId: ID!
+    action: ReviewModerationAction!
+  ): ModerateReviewPayload!
+}
