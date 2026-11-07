@@ -10,6 +10,8 @@ Approved decisions, including the anonymous BFF-to-Core assertion profile and br
 
 **Implementation commits (local)**: Core `942e288` (`feat(chatbot): persist owner-scoped conversations`), BFF `a51d196` (`feat(chatbot): add guarded RAG and conversation API`), and Frontend `a71fa23` (`feat(chatbot): add buyer support widget`). These package the current service changes; T030 and full local acceptance remain open.
 
+**Provider failover commits (local)**: BFF `c7118e3` (`feat(chatbot): add OpenRouter-first local fallback`); orchestrator `399d262` (`docs(chatbot): record OpenRouter fallback checks`). The code and local mocked checks are committed; the live credential check remains unverified.
+
 **Provider failover extension (T032)**: User approved OpenRouter as the primary grounded-answer provider, with local Ollama `deepseek-r1:8b` as fallback on external-provider configuration, transport, HTTP, or response errors. Embeddings remain local. The public BFF/OpenAPI contract does not change; provider settings and error handling are internal. The implementation and focused tests passed **51 tests, 12 warnings**; independent review and parent spot-check also passed. The reviewer's initial authorization-header finding was retracted after confirming output redaction; bounded AST inspection verified the implementation references the configured key without exposing header contents. Tests use mocked OpenRouter HTTP and synthetic credentials. `.env` was not accessed and OpenRouter was not called, so the user-requested live credential check remains unverified.
 
 ## Phase 9: Answer Provider Failover
