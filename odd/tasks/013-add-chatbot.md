@@ -31,7 +31,7 @@ The approved CU-C07 calls for grounded store help and current catalog recommenda
 - Conversation ownership is enforced by Core; conversation records expire after 30 days of inactivity without affecting ChromaDB.
 - Focused catalog UI and conversation continuation/recovery checks pass; full local end-to-end acceptance remains pending.
 - Feature T031 requires 10/10 same-language responses across five scenarios (grounded FAQ answer, refusal, clarification, insufficient-evidence/unavailable fallback, and catalog recommendation), with one English and one Spanish case per scenario and existing safety assertions retained.
-- No commit, push, deployment, remote call, or non-local check was made during this handoff. No commit unless separately authorized and appropriate.
+- Documentation closeout commits `02c5404` and `3a7164c` record the verified T031 and local-model outcomes. No source code change, push, deployment, remote call, or non-local check was made during this handoff; pre-existing unrelated changes remain untouched.
 
 ## Tasks and Progress
 
