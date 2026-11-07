@@ -40,10 +40,13 @@ local de extremo a extremo todavía está incompleta:
   aplica el límite de 2.000 caracteres, guardrails de alcance y privacidad, y
   limita solicitudes en Redis. Para usuarios registrados usa el ID verificado
   por Core; para visitantes usa únicamente la cookie `chat_session`.
-- Las preguntas frecuentes aprobadas se recuperan desde ChromaDB y el proveedor
-  local Ollama; las respuestas en inglés y español tienen pruebas enfocadas. Las
-  recomendaciones consultan el catálogo actual de Core y no agregan resultados
-  dinámicos al índice.
+- Las preguntas frecuentes aprobadas se recuperan desde ChromaDB. La generación
+  prioriza OpenRouter cuando está configurado y usa Ollama local
+  (`deepseek-r1:8b`) como respaldo; los embeddings siguen siendo locales. Las
+  respuestas en inglés y español tienen pruebas enfocadas. Las recomendaciones
+  consultan el catálogo actual de Core y no agregan resultados dinámicos al
+  índice. La validación local del proveedor externo usa HTTP simulado; no se
+  ejecutó una llamada con credenciales reales.
 - Core persiste conversaciones y mensajes en PostgreSQL con aislamiento por
   usuario o sesión anónima, e incluye eliminación y tareas de retención. El
   Frontend tiene un widget accesible para preguntas, fuentes y continuidad de

@@ -10,6 +10,12 @@ Approved decisions, including the anonymous BFF-to-Core assertion profile and br
 
 **Implementation commits (local)**: Core `942e288` (`feat(chatbot): persist owner-scoped conversations`), BFF `a51d196` (`feat(chatbot): add guarded RAG and conversation API`), and Frontend `a71fa23` (`feat(chatbot): add buyer support widget`). These package the current service changes; T030 and full local acceptance remain open.
 
+**Provider failover extension (T032)**: User approved OpenRouter as the primary grounded-answer provider, with local Ollama `deepseek-r1:8b` as fallback on external-provider configuration, transport, HTTP, or response errors. Embeddings remain local. The public BFF/OpenAPI contract does not change; provider settings and error handling are internal. The implementation and focused tests passed **51 tests, 12 warnings**; independent review and parent spot-check also passed. The reviewer's initial authorization-header finding was retracted after confirming output redaction; bounded AST inspection verified the implementation references the configured key without exposing header contents. Tests use mocked OpenRouter HTTP and synthetic credentials. `.env` was not accessed and OpenRouter was not called, so the user-requested live credential check remains unverified.
+
+## Phase 9: Answer Provider Failover
+
+- [ ] T032 Add an OpenRouter chat-completions adapter and make it primary for grounded answers, falling back to the existing local Ollama provider on configuration, transport, HTTP, or malformed-response errors. If both providers fail, retain the existing sanitized service failure. Keep the existing REST/OpenAPI contract and local embeddings unchanged. Tests cover successful OpenRouter response, fallback after relevant failure classes, and both providers failing without leaking prompt, credential, or upstream details. Writer observed RED because the class was missing, then GREEN with the focused command in `quickstart.md`: **51 passed, 12 warnings**; the independent reviewer and parent rerun also passed. Live credential validation remains unverified; `.env` was not accessed and OpenRouter was not called.
+
 ## Phase 1: Setup
 
 **Purpose**: Establish the local-only working boundary and verified repository entrypoints without changing implementation or feature metadata.
