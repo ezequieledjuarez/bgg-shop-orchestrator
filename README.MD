@@ -1,132 +1,104 @@
 # BGG Shop
 
-## Arquitectura y servicios expuestos
-
-El flujo previsto separa la interfaz de la API de dominio:
+## Arquitectura actual
 
 ```text
-Frontend React/Vite ── REST/JSON (previsto) ──> BFF Flask ── GraphQL ──> Core Django
-       (client-only hoy)                         :5000                  :8000
+Frontend React/Vite ── REST/JSON ──> BFF Flask ── GraphQL ──> Core Django/Graphene
+     localhost:3000       :5000                         :8000/graphql/
+                               PostgreSQL ◄── Core ──► Redis / Celery
 ```
 
-El Frontend consume el catálogo y la autenticación a través del BFF REST. El
-BFF traduce esas operaciones a consultas y mutaciones GraphQL del Core. El
-Core consulta `product_boardgame` y persiste usuarios mediante Django Auth; su
-endpoint GraphQL está habilitado con GraphiQL.
+El Frontend usa la API REST del BFF; no consume GraphQL directamente. El BFF
+adapta y coordina las operaciones del cliente, y el Core aplica las reglas de
+dominio y persiste datos en PostgreSQL. Redis presta servicios de broker/cache
+al Core y también aloja el límite de solicitudes del chatbot; Celery ejecuta
+trabajo asíncrono. El Compose local incluye además Mailpit para correo de
+desarrollo.
 
-### Servicios y operaciones actuales
+Los contratos canónicos son [`bgg-shop-bff/specs/openapi.yaml`](bgg-shop-bff/specs/openapi.yaml)
+(REST) y [`bgg-shop-core/specs/schema.graphql`](bgg-shop-core/specs/schema.graphql)
+(GraphQL). Los tipos del Frontend se generan desde OpenAPI con
+`npm run generate:types`; una operación presente en un contrato o en tipos
+generados no implica que su flujo esté implementado.
 
-| Servicio | Método | Ruta u operación | Request | Response / error |
-| --- | --- | --- | --- | --- |
-| Frontend | — | — | No recibe requests de API. | Renderiza la vista client-only y datos mock; no tiene errores de API propios. |
-| BFF | `GET` | `/health` | Sin parámetros. | `200` y `{"status":"healthy"}`. |
-| BFF | `GET` | `/api/v1/products` | `page` y `page_size` opcionales; positivos, `page_size <= 100`. | `200` con `ProductPage` REST; `400` por paginación inválida; `502` por fallo o payload inválido del Core. |
-| Core | `POST` | `/graphql/` (`hello`, `products`) | Body JSON GraphQL; `page` y `pageSize` opcionales para `products`. | Datos GraphQL; errores en `errors`. GraphiQL está habilitado en la ruta. |
+### Estado funcional
 
-Los contratos completos y ejemplos están en los README de cada servicio:
-[`bgg-shop-bff/README.md`](bgg-shop-bff/README.md),
-[`bgg-shop-core/README.md`](bgg-shop-core/README.md) y
-[`bgg-shop-frontend/README.md`](bgg-shop-frontend/README.md).
+El catálogo, autenticación, carrito, Wishlist, checkout/pedidos e interfaz de
+administración de métricas tienen implementaciones en los servicios. El
+checkout se orienta a Mercado Pago sandbox y requiere configuración propia;
+no se incluyen aquí validaciones remotas ni pasos de staging/producción. El
+detalle de cada API está en los README de
+[BFF](bgg-shop-bff/README.md), [Core](bgg-shop-core/README.md) y
+[Frontend](bgg-shop-frontend/README.md).
 
-### URLs locales verificadas
+### Chatbot CU-C07: implementación parcial
 
-Con `podman-compose.yaml` se publican estos puertos:
+Hay una implementación funcional en las capas principales, pero la aceptación
+local de extremo a extremo todavía está incompleta:
 
-- Frontend: `http://localhost:3000`
-- BFF: `http://localhost:5000`
-- Core GraphQL/GraphiQL: `http://localhost:8000/graphql/`
+- El BFF ofrece creación, mensajes, lectura y eliminación de conversaciones,
+  aplica el límite de 2.000 caracteres, guardrails de alcance y privacidad, y
+  limita solicitudes en Redis. Para usuarios registrados usa el ID verificado
+  por Core; para visitantes usa únicamente la cookie `chat_session`.
+- Las preguntas frecuentes aprobadas se recuperan desde ChromaDB y el proveedor
+  local Ollama; las respuestas en inglés y español tienen pruebas enfocadas. Las
+  recomendaciones consultan el catálogo actual de Core y no agregan resultados
+  dinámicos al índice.
+- Core persiste conversaciones y mensajes en PostgreSQL con aislamiento por
+  usuario o sesión anónima, e incluye eliminación y tareas de retención. El
+  Frontend tiene un widget accesible para preguntas, fuentes y continuidad de
+  conversación.
+- T030 sigue abierto: falta verificar por HTTP la expiración y el proceso de
+  retención, además de cerrar la integración BFF/Core del catálogo y la
+  aceptación completa. La prueba de navegador existente simula la API y no
+  demuestra por sí sola el flujo entre servicios.
 
-La URL `SALEOR_GRAPHQL_URL` usada por el BFF dentro de Compose es
-`http://api:8000/graphql/`. Los servicios de persistencia (`db` y `redis`)
-no forman parte de la API pública documentada aquí.
+Estado y alcance: [`specs/013-add-chatbot/spec.md`](specs/013-add-chatbot/spec.md),
+[`specs/013-add-chatbot/plan.md`](specs/013-add-chatbot/plan.md) y
+[`odd/tasks/013-add-chatbot.md`](odd/tasks/013-add-chatbot.md). Implementación:
+[`bgg-shop-bff/src/controllers/chatbot_controller.py`](bgg-shop-bff/src/controllers/chatbot_controller.py),
+[`bgg-shop-bff/src/chatbot/`](bgg-shop-bff/src/chatbot/),
+[`bgg-shop-core/saleor/graphql/api.py`](bgg-shop-core/saleor/graphql/api.py) y
+[`bgg-shop-frontend/src/chatbot/`](bgg-shop-frontend/src/chatbot/).
+Las pruebas enfocadas y sus límites están registrados en
+[`specs/013-add-chatbot/tasks.md`](specs/013-add-chatbot/tasks.md).
 
-### Autenticación implementada
+## Inicio local con Podman Compose
 
-El caso de uso CU-C01 está integrado para credenciales locales:
+Prerequisitos: Podman con proveedor Compose instalado. Los valores por defecto
+de `podman-compose.yaml` son para desarrollo local (incluyen `DEBUG=True` y
+credenciales locales); no los reutilices en un entorno compartido. El checkout
+requiere configurar en el entorno del servicio `api` un token de prueba de
+Mercado Pago y `MP_SANDBOX=true`; no hace falta para iniciar el resto del
+stack. No compartas ni guardes credenciales reales en el repositorio.
 
-- `POST /api/v1/auth/register`
-- `POST /api/v1/auth/login`
-- Pantallas frontend `/register` y `/login`
-- Sesión de login en `sessionStorage` y cierre de sesión desde el catálogo
+Desde la raíz del repositorio:
 
-La trazabilidad completa de contratos, decisiones, flujo y pruebas está en
-[`docs/CU-C01-AUTHENTICATION-CHANGES.md`](docs/CU-C01-AUTHENTICATION-CHANGES.md).
+```bash
+podman compose -f podman-compose.yaml up -d --build
+podman compose -f podman-compose.yaml exec api python manage.py migrate
+```
 
-El caso de uso CU-C04 (carrito) está implementado: el stock (`quantity`) se
-muestra en el catálogo y el carrito admite agregar, modificar y quitar
-artículos con total calculado, sin reservar stock.
+Cuando los servicios estén iniciados, las direcciones publicadas por el
+Compose son:
 
-El caso de uso CU-C05 (compra) está implementado solo para el entorno de
-pruebas de Mercado Pago: checkout con dirección de entrega, orden y factura
-persistidas, descuento de stock al aprobarse el pago, factura PDF y vista
-"Mis Compras". Requiere `MP_ACCESS_TOKEN` (credencial de prueba) y
-`MP_SANDBOX=true` en el servicio `api`; ver `.env.example`. La validación en
-vivo del flujo completo está pendiente.
+| Componente | Dirección local |
+| --- | --- |
+| Frontend | `http://localhost:3000` |
+| BFF | `http://localhost:5000` |
+| Core GraphQL/GraphiQL | `http://localhost:8000/graphql/` |
+| PostgreSQL | `localhost:5432` |
+| Redis | `localhost:6379` |
+| Mailpit | `http://localhost:8025` |
 
-## Configuración inicial del proyecto
+El BFF se conecta al Core dentro de la red Compose mediante
+`http://api:8000/graphql/`; el navegador usa el BFF en
+`http://localhost:5000/api/v1`. La base de datos del Compose no importa
+automáticamente un catálogo: los resultados de catálogo dependen de que haya
+datos disponibles en PostgreSQL.
 
-Python version 3.12.8
-Node version 20
+Para detener los contenedores sin borrar los volúmenes de datos:
 
-- Verificar si node y python están instalados
-1. 
-- Si están instalados:
-1. npm -v && pip --version
-- Verificar si la versión de node requerida está instalada:
-1. nvm list 
-# La versión que se va a usar es la 20. La 20 LTS es la 20.20.2.
-   
-- Si no están instalados 
-- Para NODE:
-1. curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
-2. source ~/.bashrc57  
-3. nvm install 20.20.2
-4. nvm --version
-- Para PYTHON (En LINUX generalmente ya viene instalado)
-1. which python
-2. which python3
-# Si which python no devuelve nada
-1. sudo apt install python3 python3-pip python3-venv -y
-2. sudo apt update && sudo apt install -y nodejs npm
-3. sudo apt install python3 python3-pip python3-venv -y
-4.   echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bashrc
-     echo '[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bashrc
-     echo 'eval "$(pyenv init -)"' >> ~/.bashrc
-# Recargar la configuración
-1. source ~/.bashrc
-2. which python
-3. pyenv local 3.12.8
-- Volver a ejecutar
-1. node -v && python --version
-2. npm -v && pip --version
-- Opcional ejecutar:
-1. sudo apt update
-2. apt list --upgradable
-3. sudo apt upgrade
-
-- Para el proyecto en Python:
-- Crear un entorno virtual en la raíz del proyecto con la versión de PYTHON a utilizar (3.12.8):
-1. pyenv local 3.12.8
-2. python -m venv .venv
-3. pip install requests pandas sqlalchemy psycopg2-binary pydantic
-
-- Para el proyecto en React:
-1. npm create vite@latest bgg-shop-frontend -- --template react-ts
-2. cd bgg-shop-frontend
-3. npm install
-4. npm install @apollo/client graphql
-5. npx skills add vercel-labs/agent-skills
-  # https://vercel.com/blog/introducing-react-best-practices
-
-
-- Para los contenedores (PODMAN):
-1. sudo apt-get -y install podman
-2. sudo apt update && sudo apt install podman-compose
-3. podman compose up -d --build
-# En %USERPROFILE%
-4. cd .config
-5. mkdir containers && cd containers
-6. touch registries.conf
-  # Local
-  # unqualified-search-registries = ["docker.io", "quay.io"]
-7. podman compose up -d
+```bash
+podman compose -f podman-compose.yaml down
+```
