@@ -2,9 +2,6 @@ version: '3.8'
 
 # Ancla de YAML con variables para Saleor y Flask
 x-saleor-environment: &saleor-environment
-  SECRET_KEY: ${SECRET_KEY:-super-secret-key}
-  SECRET_KEY_FALLBACKS: ${SECRET_KEY_FALLBACKS:-[]}
-  DATABASE_URL: ${DATABASE_URL:-postgresql://saleor:saleor_pass@db:5432/saleor}
   CELERY_BROKER_URL: "redis://redis:6379/1"
   REDIS_URL: "redis://redis:6379/0"
   ALLOWED_HOSTS: "localhost,127.0.0.1,api,bff,frontend"
@@ -16,6 +13,7 @@ x-saleor-environment: &saleor-environment
   # OpKeys feature flags and internal secret for service-to-service calls
   OPKEYS_ISSUE_ON_LOGIN: ${OPKEYS_ISSUE_ON_LOGIN:-false}
   OPKEY_INTERNAL_SECRET: ${OPKEY_INTERNAL_SECRET:-}
+  CHAT_ASSERTION_SECRET: ${CHAT_ASSERTION_SECRET:-}
 
 services:
   # 1. Base de Datos Transaccional (OLTP - PostgreSQL 15)
@@ -68,6 +66,9 @@ services:
       dockerfile: Dockerfile
     container_name: saleor_api
     command: python manage.py runserver 0.0.0.0:8000
+    env_file:
+      - .local/parallel-db/database.env
+      - .local/parallel-db/auth.env
     environment:
       <<: *saleor-environment
       MP_ACCESS_TOKEN: ${MP_ACCESS_TOKEN:-}
@@ -81,10 +82,11 @@ services:
       - ./bgg-shop-core:/app:z
       - saleor_media:/app/media:z
     depends_on:
-      db:
-        condition: service_healthy
       redis:
         condition: service_healthy
+    networks:
+      - default
+      - parallel-database
     restart: unless-stopped
 
   opkey-audit-retention:
@@ -92,16 +94,17 @@ services:
     container_name: saleor_opkey_retention
     profiles: ["opkey-audit"]
     command: python manage.py run_opkey_audit_retention
+    env_file:
+      - .local/parallel-db/database.env
+      - .local/parallel-db/auth.env
     environment:
-      DATABASE_URL: ${DATABASE_URL:-postgresql://saleor:saleor_pass@db:5432/saleor}
-      SECRET_KEY: ${SECRET_KEY:-super-secret-key}
       DEBUG: "True"
     volumes:
       - ./bgg-shop-core:/app:z
-    depends_on:
-      db:
-        condition: service_healthy
     restart: unless-stopped
+    networks:
+      - default
+      - parallel-database
 
   # 5. 🟢 Microservicio Flask (BFF / Proxy REST / RBAC)
   bff:
@@ -109,21 +112,30 @@ services:
       context: ./bgg-shop-bff
       dockerfile: Dockerfile
     container_name: saleor_bff
+    env_file:
+      - .local/parallel-db/auth.env
     environment:
       PORT: "5000"
       FLASK_ENV: "development"
-      SECRET_KEY: ${SECRET_KEY:-secret-key}
       # Comunicación interna entre contenedores por DNS de Podman
       SALEOR_GRAPHQL_URL: "http://api:8000/graphql/"
       # Base URL para llamadas internas (usado por opkey_middleware)
       SALEOR_BASE_URL: "http://api:8000"
       OPKEY_INTERNAL_SECRET: ${OPKEY_INTERNAL_SECRET:-}
+      CHAT_ASSERTION_SECRET: ${CHAT_ASSERTION_SECRET:-}
+      CHAT_REDIS_URL: "redis://redis:6379/2"
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-}
+      OPENROUTER_API_URL: ${OPENROUTER_API_URL:-https://openrouter.ai/api/v1/chat/completions}
+      CHAT_EMBEDDING_MODEL: ${CHAT_EMBEDDING_MODEL:-embeddinggemma}
+      CHAT_CHROMA_DIR: "/app/.local/approved-faq-chroma"
     ports:
       - "5000:5000"
     volumes:
       - ./bgg-shop-bff:/app:z
     depends_on:
       - api
+      - redis
     restart: unless-stopped
 
   # 6. Worker Asíncrono + Scheduler (Celery)
@@ -133,16 +145,20 @@ services:
       dockerfile: Dockerfile
     container_name: saleor_celery
     command: python -m celery -A saleor worker --beat --loglevel=info
+    env_file:
+      - .local/parallel-db/database.env
+      - .local/parallel-db/auth.env
     environment:
       <<: *saleor-environment
     volumes:
       - ./bgg-shop-core:/app:z
       - saleor_media:/app/media:z
     depends_on:
-      db:
-        condition: service_healthy
       redis:
         condition: service_healthy
+    networks:
+      - default
+      - parallel-database
     restart: unless-stopped
 
   # 7. Frontend Storefront (React / Vite)
@@ -177,3 +193,6 @@ volumes:
 networks:
   default:
     name: saleor_network
+  parallel-database:
+    name: bgg_shop_parallel_internal
+    external: true

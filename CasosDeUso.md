@@ -183,6 +183,42 @@ especificaciones, disponibilidad y opiniones de otros usuarios.
 
 - 3. El comprador accede a "Mi Lista de Deseos" para consultar los artículos guardados, transferirlos directamente al carrito o eliminarlos.
 
+## CU-C07: Consultar Preguntas Frecuentes mediante el Chatbot
+
+- Actor Principal: Comprador (Visitante o Registrado).
+
+- Objetivo: Resolver consultas sobre el funcionamiento de la tienda y la información pública de sus productos mediante preguntas en lenguaje natural.
+
+- Precondiciones: El comprador accede a la tienda; el servicio del chatbot puede estar disponible o informar una indisponibilidad recuperable.
+
+- Poscondiciones: El comprador recibe una respuesta respaldada por preguntas frecuentes, políticas y contenido público aprobado, o por datos vigentes devueltos por el catálogo a través del backend de la aplicación. La conversación se conserva en PostgreSQL durante un máximo de 30 días desde su última actividad y luego se elimina. La consulta no modifica datos ni ejecuta operaciones de compra.
+
+- Flujo Principal:
+
+- 1. El comprador abre el chatbot desde la tienda.
+
+- 2. Escribe una pregunta sobre la tienda, sus políticas o una recomendación de productos.
+
+- 3. Antes de consultar fuentes, el backend de la aplicación valida que la pregunta corresponda al ámbito de la tienda.
+
+- 4. Para preguntas frecuentes y políticas, el chatbot usa LangChain y busca en ChromaDB, que contiene únicamente preguntas frecuentes, políticas y contenido público aprobado y relativamente estable.
+
+- 5. Para recomendaciones de productos, el backend consulta las capacidades existentes del catálogo en Core y utiliza en la respuesta únicamente los datos vigentes que Core devuelve. Los resultados dinámicos del catálogo no se incorporan a ChromaDB.
+
+- 6. El chatbot responde en lenguaje natural, con enlaces a fuentes cuando están disponibles. El comprador puede realizar una pregunta de seguimiento o cerrar el chatbot.
+
+- Flujos de Excepción:
+
+- 3a. La consulta está fuera del ámbito de la tienda: el chatbot la rechaza amablemente antes de consultar la base de conocimiento, el modelo o herramientas.
+
+- 4a. No existe información suficiente en las fuentes aprobadas: el chatbot indica que no puede responder con certeza y ofrece consultar las preguntas frecuentes o contactar al soporte; no inventa información.
+
+- 5a. La consulta solicita filtros que el catálogo no puede representar fielmente: el chatbot pide una aclaración o explica la limitación, sin inventar productos, precios, disponibilidad, categorías ni enlaces.
+
+- 5b. La consulta requiere datos personales, información de una orden o una operación de cuenta: el chatbot no solicita ni revela esos datos, no realiza la operación y orienta al comprador al flujo autenticado correspondiente.
+
+- 6a. El servicio del chatbot o una fuente necesaria no está disponible: la interfaz presenta un estado de error accesible e informa que se puede reintentar o consultar las preguntas frecuentes.
+
 ## 3. Casos de Uso: Módulo Administrador / Vendedor
 
 ## CU-A01: Administrar Catálogo, Inventario y Promociones
