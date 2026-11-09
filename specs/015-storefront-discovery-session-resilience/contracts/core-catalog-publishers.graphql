@@ -1,0 +1,45 @@
+# Feature-local summary of the Core GraphQL publisher-facet delta.
+# The canonical SDL in bgg-shop-core/specs/schema.graphql is authoritative.
+
+"""A publisher name and its count of distinct eligible public catalog games."""
+type ProductPublisherCount {
+  """Trimmed publisher name; also the exact, case-sensitive selection identity."""
+  publisher: String!
+  """Nonnegative count of distinct eligible catalog bggId values, not inventory units."""
+  productCount: Int!
+}
+
+extend type Query {
+  """
+  Complete, unpaginated publisher facets from the public product catalog.
+
+  Counts are independent of search, category, other filters, and pagination.
+  Use the same row eligibility as products and count distinct game IDs.
+  Exclude null, empty, and whitespace-only publisher values. Group identical
+  values after trimming, preserve spelling, keep case variants distinct, and
+  order case-insensitively with exact spelling as the tie-breaker. Include
+  public products with zero inventory when they remain in products.
+  """
+  productPublishers: [ProductPublisherCount!]!
+
+  """
+  Summary of the canonical products field signature. All existing arguments
+  are preserved.
+  Publisher matches the trimmed stored value exactly and case-sensitively.
+  Blank or over-250-character publisher values are INVALID.
+  Combine publisher, search, category, and other criteria using AND semantics.
+  """
+  products(
+    page: Int = 1
+    pageSize: Int = 50
+    search: String
+    publisher: String
+    yearPublished: Int
+    minPlayers: Int
+    maxPlayers: Int
+    categoryId: Int
+    categoryName: String
+    priceMin: Float
+    priceMax: Float
+  ): ProductPage
+}
