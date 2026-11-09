@@ -4,6 +4,10 @@
 			"type": "http",
 			"url": "https://mcp.context7.com/mcp"
 		},
+		"github": {
+			"type": "http",
+			"url": "https://api.githubcopilot.com/mcp/"
+		},
 		"engram": {
 			"command": "/mnt/c/Users/ezequ/AppData/Local/engram/bin/engram.exe",
 			"args": [
