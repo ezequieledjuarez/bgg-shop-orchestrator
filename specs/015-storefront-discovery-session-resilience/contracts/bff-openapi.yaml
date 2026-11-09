@@ -1,0 +1,253 @@
+openapi: 3.2.0
+info:
+  title: Storefront Discovery and Session Resilience — Existing BFF Operations
+  version: 1.0.0
+  description: >-
+    Feature reference for the affected BFF operations. Existing request and
+    response schemas and reusable parameters resolve to
+    the canonical contract at ../../../bgg-shop-bff/specs/openapi.yaml.
+    Publisher-facet and exact-publisher-filter definitions below document
+    the implemented additions; the canonical service contract remains the
+    source of truth.
+paths:
+  /api/v1/products:
+    get:
+      operationId: listProducts
+      summary: List and filter board-game products
+      parameters:
+        - $ref: '../../../bgg-shop-bff/specs/openapi.yaml#/components/parameters/Page'
+        - $ref: '../../../bgg-shop-bff/specs/openapi.yaml#/components/parameters/PageSize'
+        - $ref: '../../../bgg-shop-bff/specs/openapi.yaml#/components/parameters/Search'
+        - $ref: '../../../bgg-shop-bff/specs/openapi.yaml#/components/parameters/YearPublished'
+        - $ref: '../../../bgg-shop-bff/specs/openapi.yaml#/components/parameters/MinPlayers'
+        - $ref: '../../../bgg-shop-bff/specs/openapi.yaml#/components/parameters/MaxPlayers'
+        - $ref: '../../../bgg-shop-bff/specs/openapi.yaml#/components/parameters/CategoryId'
+        - $ref: '../../../bgg-shop-bff/specs/openapi.yaml#/components/parameters/CategoryName'
+        - name: publisher
+          in: query
+          required: false
+          description: >-
+            Exact publisher name from GET /api/v1/product-publishers.
+            Matching is case-sensitive after trimming surrounding whitespace.
+            It is combined with every other supplied filter using AND semantics.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 250
+        - $ref: '../../../bgg-shop-bff/specs/openapi.yaml#/components/parameters/PriceMin'
+        - $ref: '../../../bgg-shop-bff/specs/openapi.yaml#/components/parameters/PriceMax'
+      responses:
+        '200':
+          description: Existing paginated product response.
+          content:
+            application/json:
+              schema:
+                $ref: '../../../bgg-shop-bff/specs/openapi.yaml#/components/schemas/ProductPage'
+        '400':
+          description: Invalid pagination or filter, including a blank or overlong publisher value.
+          content:
+            application/json:
+              schema:
+                $ref: '../../../bgg-shop-bff/specs/openapi.yaml#/components/schemas/ErrorResponse'
+        '502':
+          description: Existing sanitized upstream failure.
+          content:
+            application/json:
+              schema:
+                $ref: '../../../bgg-shop-bff/specs/openapi.yaml#/components/schemas/ErrorResponse'
+      security:
+        - {}
+        - BearerAuth: []
+        - XOpKey: []
+  /api/v1/product-categories:
+    get:
+      operationId: listProductCategories
+      summary: List available product category names
+      responses:
+        '200':
+          description: Distinct category names from the catalog.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        '502':
+          description: Core is unavailable or returned an invalid response.
+          content:
+            application/json:
+              schema:
+                $ref: '../../../bgg-shop-bff/specs/openapi.yaml#/components/schemas/ErrorResponse'
+  /api/v1/product-publishers:
+    get:
+      operationId: listProductPublishers
+      summary: List public catalog publishers and distinct-game counts
+      description: >-
+        Returns every distinct nonblank publisher
+        represented in the public catalog, with its count of distinct games.
+        Counts are global and independent of search, category, other filters,
+        and pagination. The response is complete and unpaginated; it is not
+        derived from a product page. Publisher is the trimmed stored name:
+        identical names after trimming are grouped, case variants remain
+        distinct, and spelling is preserved. Blank values are excluded.
+        Public products with zero inventory remain eligible when present in
+        the public catalog. No private/user-specific data is included.
+      responses:
+        '200':
+          description: Complete, ordered publisher facet list; empty means no eligible publishers.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProductPublisherFacet'
+              example:
+                - publisher: Kosmos
+                  product_count: 7
+                - publisher: Salt & Pepper Games
+                  product_count: 3
+        '502':
+          description: Core is unavailable or returned invalid facet data; stale counts are not a successful fallback.
+          content:
+            application/json:
+              schema:
+                $ref: '../../../bgg-shop-bff/specs/openapi.yaml#/components/schemas/ErrorResponse'
+      security:
+        - {}
+  /api/v1/auth/me:
+    get:
+      operationId: getCurrentUserCapabilities
+      summary: Read the current authenticated user's administrative flags
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Current user's role flags; navigation hint only.
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+                enum: [no-store]
+          content:
+            application/json:
+              schema:
+                $ref: '../../../bgg-shop-bff/specs/openapi.yaml#/components/schemas/CurrentUserCapabilities'
+        '401':
+          description: Missing, invalid, or inactive user identity.
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+                enum: [no-store]
+          content:
+            application/json:
+              schema:
+                $ref: '../../../bgg-shop-bff/specs/openapi.yaml#/components/schemas/AuthErrorResponse'
+        '502':
+          description: Core identity could not be resolved; upstream details are omitted.
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+                enum: [no-store]
+          content:
+            application/json:
+              schema:
+                $ref: '../../../bgg-shop-bff/specs/openapi.yaml#/components/schemas/AuthErrorResponse'
+  /api/v1/auth/refresh:
+    post:
+      operationId: refreshAccessToken
+      summary: Refresh a customer access token using the existing refresh flow
+      description: No new refresh behavior or loop is proposed.
+      parameters:
+        - name: refresh_token
+          in: cookie
+          required: false
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '../../../bgg-shop-bff/specs/openapi.yaml#/components/schemas/AuthRefreshRequest'
+      responses:
+        '200':
+          description: Existing access-token response and optional refresh-cookie rotation.
+          headers:
+            Set-Cookie:
+              description: Rotated HttpOnly refresh_token cookie when available.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '../../../bgg-shop-bff/specs/openapi.yaml#/components/schemas/AuthRefreshResponse'
+        '401':
+          description: Missing or rejected refresh token.
+          content:
+            application/json:
+              schema:
+                $ref: '../../../bgg-shop-bff/specs/openapi.yaml#/components/schemas/AuthRefreshErrorResponse'
+        '502':
+          description: Core is unavailable or returned an invalid response.
+          content:
+            application/json:
+              schema:
+                $ref: '../../../bgg-shop-bff/specs/openapi.yaml#/components/schemas/AuthRefreshErrorResponse'
+  /api/v1/orders:
+    get:
+      operationId: listOrders
+      summary: List the authenticated customer's own orders
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Orders belonging only to the authenticated customer; empty is valid.
+          content:
+            application/json:
+              schema:
+                $ref: '../../../bgg-shop-bff/specs/openapi.yaml#/components/schemas/OrderListResponse'
+              example:
+                orders: []
+        '401':
+          description: Missing or invalid bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: '../../../bgg-shop-bff/specs/openapi.yaml#/components/schemas/OrderErrorResponse'
+        '502':
+          description: Core is unavailable; this is not an empty success.
+          content:
+            application/json:
+              schema:
+                $ref: '../../../bgg-shop-bff/specs/openapi.yaml#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    ProductPublisherFacet:
+      type: object
+      additionalProperties: false
+      required:
+        - publisher
+        - product_count
+      properties:
+        publisher:
+          type: string
+          minLength: 1
+          maxLength: 250
+          description: Trimmed exact publisher identity and preserved display spelling.
+        product_count:
+          type: integer
+          minimum: 0
+          description: Count of distinct eligible public catalog bggId values for this exact publisher.
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+    XOpKey:
+      type: apiKey
+      in: header
+      name: X-Op-Key
