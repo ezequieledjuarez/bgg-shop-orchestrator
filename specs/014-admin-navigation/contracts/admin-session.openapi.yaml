@@ -1,0 +1,111 @@
+openapi: 3.1.0
+info:
+  title: Admin Navigation Current-User Contract Proposal
+  version: 0.1.0
+  description: >-
+    Planning-only design approved by the user on 2026-11-09 for a minimal BFF
+    role snapshot used to render administrative navigation. This file is not
+    canonical or implemented and does not authorize runtime changes in this
+    turn. Promote and validate the approved design through task T006 before
+    implementation.
+x-contract-status: approved-design
+paths:
+  /api/v1/auth/me:
+    get:
+      tags:
+        - Authentication
+      summary: Read the current authenticated user's administrative flags
+      description: >-
+        Approved endpoint design. Requires a bearer-authenticated active user and
+        reads current saved account flags through Core Query.me. The response
+        is a minimal navigation hint only; it does not grant authorization.
+        Operation-key-only access is not accepted. The response is never
+        cacheable.
+      operationId: getCurrentUserCapabilities
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Current user's role flags.
+          headers:
+            Cache-Control:
+              required: true
+              description: Role snapshots must not be cached.
+              schema:
+                type: string
+                const: no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrentUserCapabilities"
+              example:
+                is_staff: true
+                is_superuser: false
+        "401":
+          description: Missing, invalid, or inactive user identity.
+          headers:
+            Cache-Control:
+              required: true
+              description: Authentication results must not be cached.
+              schema:
+                type: string
+                const: no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SanitizedError"
+              example:
+                errors:
+                  - code: UNAUTHENTICATED
+                    message: Authentication is required.
+        "502":
+          description: Core identity could not be resolved; upstream details are omitted.
+          headers:
+            Cache-Control:
+              required: true
+              description: Identity resolution failures must not be cached.
+              schema:
+                type: string
+                const: no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SanitizedError"
+              example:
+                errors:
+                  - code: UPSTREAM_FAILURE
+                    message: The current user could not be verified.
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    CurrentUserCapabilities:
+      type: object
+      additionalProperties: false
+      required:
+        - is_staff
+        - is_superuser
+      properties:
+        is_staff:
+          type: boolean
+        is_superuser:
+          type: boolean
+    SanitizedError:
+      type: object
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          items:
+            type: object
+            required:
+              - code
+              - message
+            properties:
+              code:
+                type: string
+              message:
+                type: string
