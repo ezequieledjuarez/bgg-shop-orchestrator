@@ -10,6 +10,46 @@ an empty value or any other URL disables the OpenRouter attempt and uses the
 existing local Ollama fallback. If both providers fail, the public error remains
 sanitized. No change to FAQ retrieval, guardrails, or the API contract is required.
 
+## Container chat configuration
+
+The root [Podman startup instructions](../../README.MD#inicio-local-con-podman-compose)
+start the local stack. Before creating containers, the user must provision
+`CHAT_ASSERTION_SECRET`: a shared, high-entropy secret dedicated to chat identity
+assertions. Compose passes the same setting to BFF and Core. Do not reuse
+`OPKEY_INTERNAL_SECRET`, an OpenRouter API key, or a Django secret; do not commit
+or print credentials. The empty Compose default deliberately keeps the existing
+fail-closed behavior, so conversation creation remains unavailable without it.
+
+The BFF receives `CHAT_REDIS_URL` pointing to the Compose Redis service on
+database 2, separate from the Core cache and Celery broker. Redis must be
+available for chat rate limiting. Optional `OPENROUTER_API_KEY` and
+`OPENROUTER_MODEL` are passed through; `OPENROUTER_API_URL` defaults to the
+official endpoint described above. Missing credentials retain local fallback,
+not an authenticated OpenRouter connection.
+
+`CHAT_EMBEDDING_MODEL` defaults to `embeddinggemma`, the model used in the
+earlier local checks recorded below; it must already be pulled into the
+reachable Ollama instance. `CHAT_CHROMA_DIR` uses `/app/.local/approved-faq-chroma`,
+persisted through the existing BFF `/app` bind mount. The BFF Dockerfile installs
+Redis, LangChain Chroma, and LangChain Ollama from `requirements.txt`; an older
+image may still need rebuilding if those dependencies are absent.
+
+**Unresolved container blocker:** host Ollama reachability is not configured by
+this Compose change. `CHAT_OLLAMA_BASE_URL` is deliberately not wired to
+`host.containers.internal`: the provider accepts only loopback HTTP(S) endpoints
+and rejects that hostname. Its default loopback address refers to the BFF
+container, not the host. An approved container-local loopback connection to
+Ollama is still required for embeddings and local answer fallback, even when
+OpenRouter is configured. No networking workaround or guard relaxation is
+included here.
+
+Changing root environment settings or Compose entries does not inject them into
+existing containers with a plain restart. Applying them requires recreating BFF
+and Core after approval, without resetting volumes or migrating the existing
+database. No containers were recreated, dependencies installed, database changed,
+or remote calls made for this configuration update. Conversation creation and
+full HTTP BFF/Core acceptance remain unverified.
+
 ## Focused passing checks
 
 | Purpose | Command | Observed outcome and limit |
@@ -22,6 +62,7 @@ sanitized. No change to FAQ retrieval, guardrails, or the API contract is requir
 | BFF integration, RAG, guardrails, privacy | `cd bgg-shop-bff && PYTHONPATH=. pytest -q tests/test_chatbot_service_integration.py tests/test_chatbot_rag.py tests/test_chatbot_guardrails.py tests/test_chatbot_privacy.py` | **64 passed, 0 failed, 87 warnings.** Tests around lines 205–265 of `bgg-shop-bff/tests/test_chatbot_service_integration.py` assert invalid/refused inputs make zero answer/provider/Core calls and that provider failures expose sanitized responses; the catalog guard test is around lines 281–293. |
 | BFF guardrails, privacy, RAG, catalog, conversations | `cd bgg-shop-bff && PYTHONPATH=. pytest -q tests/test_chatbot_guardrails.py tests/test_chatbot_privacy.py tests/test_chatbot_rag.py tests/test_chatbot_catalog.py tests/test_chatbot_conversations.py` | **69 passed, 0 failed, 99 warnings.** RAG tests include updated/withdrawn sources and deleted files; the catalog focused tests pass within this selection. The RAG tests use deterministic fakes, not local Chroma. |
 | T031 English/Spanish parity focused verification | `cd bgg-shop-bff && PYTHONPATH=. .venv/bin/python -m pytest -q --tb=short tests/test_chatbot_service_integration.py tests/test_chatbot_guardrails.py tests/test_chatbot_privacy.py tests/test_chatbot_rag.py tests/test_chatbot_catalog.py` | **117 passed, 181 warnings in 3.01s** on parent spot-check. An independent review found no high-confidence regressions and independently ran the same command: **117 passed, 181 warnings in 2.99s**. These deterministic focused tests cover the ten fixed English/Spanish cases required by FR-012/SC-008: grounded FAQ, refusal, clarification, insufficient-evidence/unavailable fallback, and catalog recommendation (one each per language), with privacy/safety assertions in the focused set. The warnings are the existing `datetime.datetime.utcnow()` deprecation at `bgg-shop-bff/app.py:196`. |
+| Pure greeting routing follow-up (2026-11-09) | `cd bgg-shop-bff && PYTHONPATH=. .venv/bin/python -m pytest -q --tb=short tests/test_chatbot_guardrails.py tests/test_chatbot_service_integration.py tests/test_chatbot_privacy.py tests/test_chatbot_rag.py tests/test_chatbot_catalog.py tests/test_chatbot_openrouter_integration.py` | **154 passed, 206 existing deprecation warnings in 7.17s.** The added tests cover exact-match English/Spanish introductions, punctuation and accents, safe checks preceding greetings, no provider/Core persistence for a pure greeting, and grounded retrieval for a greeting plus a shop question. Initial targeted RED was **10 failed, 71 passed** before implementation. The API response shape and canonical contracts are unchanged. |
 | T031 actual FAQ model smoke (separate from focused tests) | Parent ran the actual FAQ service with local Ollama, temporary Chroma persistence, `CHAT_EMBEDDING_MODEL=embeddinggemma`, and `CHAT_OLLAMA_BASE_URL=http://127.0.0.1:11434`, using `deepseek-r1:8b`. | **Passed for FAQ only:** `¿Qué medios de pago acepta la tienda?` received a Spanish answer and `What payment methods does the store accept?` received an English answer; both returned approved source `Preguntas Frecuentes` (`http://localhost:3030`). The temporary directory was automatically cleaned. This does not verify guardrail or catalog behavior with a real model. |
 | T032 OpenRouter-primary/local fallback tests | `cd bgg-shop-bff && PYTHONPATH=. .venv/bin/python -m pytest -q --tb=short tests/test_chatbot_provider.py tests/test_chatbot_service_local.py tests/test_chatbot_service_integration.py tests/test_chatbot_rag.py` | Writer observed RED before implementation (new fallback class missing), then GREEN: **51 passed, 12 warnings**. Independent review and parent spot-check each reran the command with **51 passed, 12 warnings**. OpenRouter requests are mocked with synthetic credentials; no `.env` file or external service was accessed. A review alert about the Authorization value was a false positive caused by output redaction; AST inspection confirmed it is built from `OPENROUTER_API_KEY`. Live credential validation was not performed; it is an optional follow-up after T032's administrative closure. |
 | T032 local fallback E2E (2026-11-07) | One-off direct `create_local_chatbot_service` invocation from `bgg-shop-bff`; explicit process environment only, with no dotenv load | **Passed:** loopback Ollama tags showed `embeddinggemma:latest` and `deepseek-r1:8b`. The process used `CHAT_EMBEDDING_MODEL=embeddinggemma`, `CHAT_OLLAMA_BASE_URL=http://127.0.0.1:11434`, and synthetic `OPENROUTER_API_KEY` / `OPENROUTER_MODEL` values. Monkeypatched `src.chatbot.provider.requests.post` raised one synthetic `requests.ConnectionError`; no OpenRouter connection was attempted. With approved sources `knowledge/approved`, temporary Chroma, and question `¿Qué medios de pago acepta la tienda?`, the service returned a real local `deepseek-r1:8b` answer attributed to `Preguntas Frecuentes`. Process exited 0 and temporary Chroma was cleaned up. This verifies the direct service flow through local Ollama and Chroma only, not frontend/Core HTTP E2E; live OpenRouter credential/auth validation was not performed. No `.env` was accessed, no secret was displayed/transmitted, and no external request was made. Trace: `specs/013-add-chatbot/tasks.md` T032, `specs/013-add-chatbot/plan.md` approved provider decision, `bgg-shop-bff/src/chatbot/provider.py`, `bgg-shop-bff/src/chatbot/service.py`, and tests `bgg-shop-bff/tests/test_chatbot_provider.py`, `bgg-shop-bff/tests/test_chatbot_service_local.py`, `bgg-shop-bff/tests/test_chatbot_service_integration.py`, `bgg-shop-bff/tests/test_chatbot_rag.py`. |

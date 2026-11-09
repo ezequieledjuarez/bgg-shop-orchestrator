@@ -1,5 +1,9 @@
 # En el .gitignore de tp-dev-env
 .env
+.env.*
+!.env.example
+!.env.template
 /bgg-shop-core
 /bgg-shop-bff
 /bgg-shopfrontend
+/.local/
