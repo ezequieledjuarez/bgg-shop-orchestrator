@@ -1,7 +1,7 @@
 # Feature: Manage Catalog & Inventory - Frontend
 
 ## Goal
-Implement admin UI for managing products, inventory, and promotions as defined in specs/007-manage-catalog-inventory-frontend.md
+Implement admin UI for managing products, inventory, and promotions as defined in the [CU-A01 plan](../../specs/007-manage-catalog-inventory/plan.md).
 
 ## Tasks
 - scaffold admin router and routes: `/admin/products`, `/admin/products/new`, `/admin/promotions`
