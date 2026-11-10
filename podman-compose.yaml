@@ -7,8 +7,18 @@ x-saleor-environment: &saleor-environment
   ALLOWED_HOSTS: "localhost,127.0.0.1,api,bff,frontend"
   CORS_ALLOWED_ORIGINS: "http://localhost:3000,http://127.0.0.1:3000,http://localhost:5000"
   DEBUG: "True"
+  # Local default is Mailpit. An external SMTP host needs the explicit opt-in below,
+  # TLS/SSL and a real sender; set them in your shell, never in this file.
   EMAIL_URL: "smtp://mailpit:1025"
-  DEFAULT_FROM_EMAIL: "noreply@saleor.local"
+  EMAIL_HOST: ${EMAIL_HOST:-mailpit}
+  EMAIL_PORT: ${EMAIL_PORT:-1025}
+  EMAIL_HOST_USER: ${EMAIL_HOST_USER:-}
+  MEEPLE_APP_SMTP_PASSWORD: ${MEEPLE_APP_SMTP_PASSWORD:-}
+  EMAIL_USE_TLS: ${EMAIL_USE_TLS:-false}
+  EMAIL_USE_SSL: ${EMAIL_USE_SSL:-false}
+  EMAIL_EXTERNAL_SMTP_ENABLED: ${EMAIL_EXTERNAL_SMTP_ENABLED:-false}
+  DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-noreply@saleor.local}
+  EMAIL_VERIFICATION_FRONTEND_ORIGIN: ${EMAIL_VERIFICATION_FRONTEND_ORIGIN:-http://localhost:3000}
   MEDIA_ROOT: "/app/media"
   # OpKeys feature flags and internal secret for service-to-service calls
   OPKEYS_ISSUE_ON_LOGIN: ${OPKEYS_ISSUE_ON_LOGIN:-false}
