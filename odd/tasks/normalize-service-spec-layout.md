@@ -77,5 +77,5 @@ commit the scoped documentation changes in the existing local feature branches.
   - Core: `93a28c3df3d70f533182125a3216e12b95a42086`
   - BFF: `00b6caf005c88c2bcd926c9c17faa96cc90779cd`
   - Frontend: `a540f1f15ae2033d08253a69573b1acf7f1fcc48`
-- Root changes and this evidence update are staged for the separate root
-  documentation commit; record its observed hash in the final report.
+- Root documentation and this evidence were committed in
+  `f4269e8` (`docs(specs): normalize service spec layout`).
