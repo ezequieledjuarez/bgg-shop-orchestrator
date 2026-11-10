@@ -156,6 +156,19 @@ Respuesta `201`:
 
 El registro no devuelve `session`.
 
+La contraseña para una cuenta nueva debe incluir al menos una letra ASCII
+mayúscula (`A-Z`), una minúscula (`a-z`), un dígito (`0-9`) y un signo de
+puntuación ASCII imprimible. Los espacios y otros caracteres de espacio en
+blanco no cuentan como símbolo; los caracteres Unicode pueden formar parte de
+la contraseña, pero no sustituyen esas categorías ASCII. Se conserva el rango
+existente de 8 a 128 caracteres definido por el BFF. La contraseña se valida
+sin recortarla ni modificarla; Core es la autoridad y el BFF aplica la misma
+regla en el límite REST antes de llamar a Core. Un rechazo no crea una cuenta ni
+solicita un correo de verificación.
+
+Esta composición aplica solo al registro. No agrega requisitos al inicio de
+sesión ni fuerza cambios para cuentas existentes.
+
 ### Login
 
 `POST /api/v1/auth/login`
@@ -266,6 +279,16 @@ No se creó una tabla de usuario paralela ni una migración específica para est
 caso de uso.
 
 ## 7. Flujos
+
+### Verificación de correo (016)
+
+El registro ya no inicia sesión: crea una cuenta pendiente y envía un enlace
+`/verify-email#token=…` (3600 s, un solo uso). El login de una cuenta pendiente
+responde `403 EMAIL_NOT_VERIFIED`. Confirmación y reenvío usan
+`POST /api/v1/auth/email-verification/{confirm,resend}`. Las cuentas anteriores
+quedan exentas y las deshabilitadas siguen deshabilitadas. Los contratos
+canónicos son `bgg-shop-bff/specs/openapi.yaml` y
+`bgg-shop-core/specs/schema.graphql`; detalles en `specs/016-email-verification/`.
 
 ### Registro exitoso
 
