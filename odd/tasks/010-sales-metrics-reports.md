@@ -13,9 +13,9 @@ The feature plan described only the main metrics operation, while the feature ta
 - `specs/010-sales-metrics-reports/plan.md`
 - `specs/010-sales-metrics-reports/tasks.md`
 - `bgg-shop-core/specs/schema.graphql`
-- `bgg-shop-core/specs/010-sales-metrics-reports-tasks.md`
+- `bgg-shop-core/specs/010-sales-metrics-reports/tasks.md`
 - `bgg-shop-bff/specs/openapi.yaml`
-- `bgg-shop-bff/specs/010-sales-metrics-reports-tasks.md`
+- `bgg-shop-bff/specs/010-sales-metrics-reports/tasks.md`
 - `odd/tasks/010-sales-metrics-reports.md`
 
 ## Completed Work Unit: Contracts
@@ -39,10 +39,10 @@ The feature plan described only the main metrics operation, while the feature ta
 - `specs/010-sales-metrics-reports/plan.md`
 - `specs/010-sales-metrics-reports/tasks.md`
 - `bgg-shop-core/specs/schema.graphql`
-- `bgg-shop-core/specs/010-sales-metrics-reports-tasks.md`
+- `bgg-shop-core/specs/010-sales-metrics-reports/tasks.md`
 - `bgg-shop-core/tests/test_admin_sales_metrics_postgres.py`
 - `bgg-shop-bff/specs/openapi.yaml`
-- `bgg-shop-bff/specs/010-sales-metrics-reports-tasks.md`
+- `bgg-shop-bff/specs/010-sales-metrics-reports/tasks.md`
 - `odd/tasks/010-sales-metrics-reports.md`
 
 No resolver, controller, database schema, migration, or frontend implementation is included in X-5/C-1a.
@@ -61,7 +61,7 @@ No resolver, controller, database schema, migration, or frontend implementation 
 
 - `bgg-shop-core/saleor/graphql/api.py`
 - `bgg-shop-core/tests/test_admin_sales_metrics_postgres.py`
-- `bgg-shop-core/specs/010-sales-metrics-reports-tasks.md`
+- `bgg-shop-core/specs/010-sales-metrics-reports/tasks.md`
 - `specs/010-sales-metrics-reports/tasks.md`
 - `odd/tasks/010-sales-metrics-reports.md`
 
@@ -75,7 +75,7 @@ No controller, database schema, migration, or frontend implementation is include
 
 - `bgg-shop-core/saleor/graphql/api.py`
 - `bgg-shop-core/tests/test_admin_sales_metrics_postgres.py`
-- `bgg-shop-core/specs/010-sales-metrics-reports-tasks.md`
+- `bgg-shop-core/specs/010-sales-metrics-reports/tasks.md`
 - `specs/010-sales-metrics-reports/tasks.md`
 - `odd/tasks/010-sales-metrics-reports.md`
 
@@ -87,7 +87,7 @@ No controller, database schema, migration, or frontend implementation is include
 
 ### Allowed edit surfaces for C-4
 
-- `bgg-shop-core/specs/010-sales-metrics-reports-tasks.md`
+- `bgg-shop-core/specs/010-sales-metrics-reports/tasks.md`
 - `specs/010-sales-metrics-reports/tasks.md`
 - `odd/tasks/010-sales-metrics-reports.md`
 
@@ -108,7 +108,7 @@ No application code, database schema, index, or migration was added in C-4. Any 
 ### Allowed edit surfaces for B-1
 
 - `bgg-shop-bff/tests/test_admin_sales_metrics.py`
-- `bgg-shop-bff/specs/010-sales-metrics-reports-tasks.md`
+- `bgg-shop-bff/specs/010-sales-metrics-reports/tasks.md`
 - `specs/010-sales-metrics-reports/tasks.md`
 - `odd/tasks/010-sales-metrics-reports.md`
 
@@ -134,7 +134,7 @@ No BFF implementation, OpenAPI, frontend, or Core changes are included in B-1.
 - `bgg-shop-bff/src/controllers/admin_sales_controller.py`
 - `bgg-shop-bff/src/controllers/__init__.py`
 - `bgg-shop-bff/tests/test_admin_sales_metrics.py`
-- `bgg-shop-bff/specs/010-sales-metrics-reports-tasks.md`
+- `bgg-shop-bff/specs/010-sales-metrics-reports/tasks.md`
 - `specs/010-sales-metrics-reports/tasks.md`
 - `odd/tasks/010-sales-metrics-reports.md`
 
@@ -163,7 +163,7 @@ No Core or frontend edits are included in B-2/B-3.
 
 ### Allowed edit surfaces for B-6
 
-- `bgg-shop-bff/specs/010-sales-metrics-reports-tasks.md`
+- `bgg-shop-bff/specs/010-sales-metrics-reports/tasks.md`
 - `specs/010-sales-metrics-reports/tasks.md`
 - `odd/tasks/010-sales-metrics-reports.md`
 
@@ -249,8 +249,8 @@ F-4 router/navigation changes are explicitly excluded. The F-2 test file is fixe
 - `bgg-shop-frontend/tests/e2e/sales.spec.ts`
 - `bgg-shop-core/opkeys/middleware.py`
 - `bgg-shop-core/tests/test_opkeys_internal.py`
-- `bgg-shop-core/specs/010-sales-metrics-reports-tasks.md`
-- `bgg-shop-frontend/specs/010-sales-metrics-reports-tasks.md`
+- `bgg-shop-core/specs/010-sales-metrics-reports/tasks.md`
+- `bgg-shop-frontend/specs/010-sales-metrics-reports/tasks.md`
 - `specs/010-sales-metrics-reports/plan.md`
 - `specs/010-sales-metrics-reports/tasks.md`
 - `odd/tasks/010-sales-metrics-reports.md`
@@ -270,7 +270,7 @@ F-4 router/navigation changes are explicitly excluded. The F-2 test file is fixe
 
 - `bgg-shop-core/opkeys/middleware.py`
 - `bgg-shop-core/tests/test_opkeys_internal.py`
-- `bgg-shop-core/specs/010-sales-metrics-reports-tasks.md`
+- `bgg-shop-core/specs/010-sales-metrics-reports/tasks.md`
 - `specs/010-sales-metrics-reports/tasks.md`
 - `odd/tasks/010-sales-metrics-reports.md`
 
