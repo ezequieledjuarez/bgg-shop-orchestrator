@@ -63,6 +63,8 @@ Tema: E-commerce Juegos de mesa.
 
 - 3. Al recibir la confirmación de Google, el sistema busca la cuenta vinculada (o la crea si es un registro nuevo) y activa la sesión.
 
+- 2c. Registro local: la cuenta queda pendiente hasta confirmar el correo con un enlace de un solo uso (válido 1 hora); el login se rechaza mientras esté pendiente y el comprador puede pedir un reenvío (con límites de frecuencia). Las cuentas anteriores a esta función quedan exentas.
+
 - 2a. Credenciales incorrectas o correo duplicado: El sistema notifica el error especifico sin comprometer la seguridad.
 
 - 2b. Cancelación en Google: El sistema muestra una alerta de fallo en la autenticación externa y regresa a la vista de login.
