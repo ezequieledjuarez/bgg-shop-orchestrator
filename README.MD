@@ -212,6 +212,31 @@ podman compose -f podman-compose.yaml up -d --build
 podman compose -f podman-compose.yaml exec api python manage.py migrate
 ```
 
+El BFF y el servicio privado de Ollama comparten una red dedicada de Compose;
+Ollama no publica puertos en el host y sus modelos persisten en el volumen
+`ollama_models`. Después del inicio, descarga explícitamente el modelo de
+embeddings de preguntas frecuentes:
+
+```sh
+podman compose -f podman-compose.yaml exec ollama ollama pull embeddinggemma
+```
+
+El respaldo local de respuestas sigue siendo `deepseek-r1:8b`; descárgalo por
+separado solo si todavía no está disponible:
+
+```sh
+podman compose -f podman-compose.yaml exec ollama ollama pull deepseek-r1:8b
+```
+
+Estas descargas son manuales y no se ejecutan al iniciar los servicios. Desde
+el contenedor BFF, verifica las etiquetas de Ollama y una respuesta real de
+embeddings sin publicar Ollama en el host:
+
+```sh
+podman compose -f podman-compose.yaml exec bff python -c 'import urllib.request; print(urllib.request.urlopen("http://ollama:11434/api/tags").read().decode())'
+podman compose -f podman-compose.yaml exec bff python -c 'import json, urllib.request; request=urllib.request.Request("http://ollama:11434/api/embed", data=json.dumps({"model":"embeddinggemma","input":"synthetic local embedding check"}).encode(), headers={"Content-Type":"application/json"}); response=json.load(urllib.request.urlopen(request)); print("embedding dimensions:", len(response["embeddings"][0]))'
+```
+
 Cuando los servicios estén iniciados, las direcciones publicadas por el
 Compose son:
 

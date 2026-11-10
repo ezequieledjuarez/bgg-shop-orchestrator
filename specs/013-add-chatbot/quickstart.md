@@ -34,21 +34,41 @@ persisted through the existing BFF `/app` bind mount. The BFF Dockerfile install
 Redis, LangChain Chroma, and LangChain Ollama from `requirements.txt`; an older
 image may still need rebuilding if those dependencies are absent.
 
-**Unresolved container blocker:** host Ollama reachability is not configured by
-this Compose change. `CHAT_OLLAMA_BASE_URL` is deliberately not wired to
-`host.containers.internal`: the provider accepts only loopback HTTP(S) endpoints
-and rejects that hostname. Its default loopback address refers to the BFF
-container, not the host. An approved container-local loopback connection to
-Ollama is still required for embeddings and local answer fallback, even when
-OpenRouter is configured. No networking workaround or guard relaxation is
-included here.
+The approved local Compose topology runs the official Ollama image on a
+dedicated `chat-models` bridge shared only with the BFF. The BFF also stays on
+the default Compose network for Core and Redis. Ollama listens on
+`0.0.0.0:11434` inside its container only; the Compose service publishes no host
+port and persists model files in the named `ollama_models` volume. The provider
+accepts this exact internal endpoint (`http://ollama:11434`, optionally with a
+trailing slash) in addition to its existing loopback HTTP(S) URLs. Other
+non-loopback hosts, including `host.containers.internal`, remain rejected. This
+is local deployment configuration, not a public BFF/API contract change.
+
+After starting the stack, pull `embeddinggemma` manually with the command in
+the root startup instructions; Compose does not pull models on startup.
+`deepseek-r1:8b` remains the configured local answer fallback and must also be
+pulled manually if it is not already present. To verify service reachability
+and real embedding generation locally, run the root README's BFF-container
+checks for `/api/tags` and `/api/embed`.
 
 Changing root environment settings or Compose entries does not inject them into
-existing containers with a plain restart. Applying them requires recreating BFF
-and Core after approval, without resetting volumes or migrating the existing
-database. No containers were recreated, dependencies installed, database changed,
-or remote calls made for this configuration update. Conversation creation and
-full HTTP BFF/Core acceptance remain unverified.
+existing containers with a plain restart. Applying this Ollama endpoint and
+network change requires recreating the BFF, not Core, without resetting volumes
+or migrating the existing database.
+
+**Local connectivity verification (2026-11-10):** After owner approval, Ollama
+was created and `embeddinggemma` was pulled into its persistent volume
+(621 MB). BFF and its dependent frontend container were recreated; no database
+or existing volume was reset. From the BFF, `/api/tags` returned the embedding
+model and `/api/embed` returned one 768-dimensional vector. Approved FAQ
+indexing and retrieval using real Ollama embeddings and temporary Chroma
+storage returned one document; the temporary storage was cleaned up. Ollama
+had no published host port, and BFF catalog and frontend checks returned HTTP
+200. Provider/startup/service regressions passed with **64 tests**; a parent
+provider/startup repeat passed with **41 tests**. No live OpenRouter generation
+or HTTP conversation exchange was exercised. The new Ollama volume does not
+yet contain `deepseek-r1:8b`, so local answer fallback remains unavailable until
+that separate model is pulled.
 
 ## Focused passing checks
 

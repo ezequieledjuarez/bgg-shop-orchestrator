@@ -134,6 +134,7 @@ services:
       OPKEY_INTERNAL_SECRET: ${OPKEY_INTERNAL_SECRET:-}
       CHAT_ASSERTION_SECRET: ${CHAT_ASSERTION_SECRET:-}
       CHAT_REDIS_URL: "redis://redis:6379/2"
+      CHAT_OLLAMA_BASE_URL: "http://ollama:11434"
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       OPENROUTER_MODEL: ${OPENROUTER_MODEL:-}
       OPENROUTER_API_URL: ${OPENROUTER_API_URL:-https://openrouter.ai/api/v1/chat/completions}
@@ -144,9 +145,33 @@ services:
     volumes:
       - ./bgg-shop-bff:/app:z
     depends_on:
-      - api
-      - redis
+      api:
+        condition: service_started
+      redis:
+        condition: service_started
+      ollama:
+        condition: service_healthy
+    networks:
+      - default
+      - chat-models
     restart: unless-stopped
+
+  ollama:
+    image: docker.io/ollama/ollama
+    container_name: saleor_ollama
+    environment:
+      OLLAMA_HOST: "0.0.0.0:11434"
+    volumes:
+      - ollama_models:/root/.ollama
+    networks:
+      - chat-models
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
 
   # 6. Worker Asíncrono + Scheduler (Celery)
   celery:
@@ -199,10 +224,14 @@ volumes:
     driver: local
   frontend_node_modules:
     driver: local
+  ollama_models:
+    driver: local
 
 networks:
   default:
     name: saleor_network
+  chat-models:
+    name: saleor_chat_models
   parallel-database:
     name: bgg_shop_parallel_internal
     external: true
