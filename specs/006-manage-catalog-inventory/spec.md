@@ -2,6 +2,17 @@
 
 Short name: manage-catalog-inventory
 
+**Estado**: CU-A01 completado según confirmación del responsable. No hay aquí
+un registro de comandos ni resultados de validación; esta confirmación no se
+presenta como evidencia independiente de pruebas.
+
+**Referencias relacionadas (no son evidencia de esta confirmación)**:
+implementación en `bgg-shop-bff/src/controllers/admin_products_controller.py`
+y `bgg-shop-frontend/src/admin/products/`; pruebas en
+`bgg-shop-bff/tests/test_products.py`,
+`bgg-shop-core/tests/test_graphql_products.py` y las pruebas de componentes
+`bgg-shop-frontend/src/admin/products/`.
+
 ## Objetivo
 Permitir al Administrador/Vendedor gestionar el ciclo de vida de los productos (alta, baja, modificación), controlar el stock y configurar promociones o cupones con fechas de vigencia, de modo que el catálogo público muestre la oferta y precios vigentes.
 
@@ -106,5 +117,4 @@ Estas decisiones actualizan y concretan los requisitos funcionales y criterios d
 ## Next Steps
 - Mantener las tareas alineadas con las decisiones vigentes y resolver los puntos abiertos antes de definir contratos y pruebas.
 - Ejecutar hooks de git si deseado (crear rama de feature).  
-
 

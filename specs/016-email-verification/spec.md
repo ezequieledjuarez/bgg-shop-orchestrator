@@ -2,10 +2,15 @@
 
 **Feature Branch**: `016-email-verification`
 **Created**: 2026-11-09
-**Status**: Specification clarified — ready for contract-first planning; not implemented.
+**Status**: Implementation complete; locally verified by the checks recorded
+in [quickstart.md](quickstart.md). This does not claim deployment, external
+email delivery, or completion of the unavailable SC-005 participant study.
 **Input**: User request to specify email verification with a token. Retain email/password login, discard Google login, and support a future academic local demo using Gmail SMTP for approximately ten emails.
 
-> Proposal only. Nothing in this document asserts that email verification, delivery, or new contract operations exist today. This authoring run changes specification artifacts only and authorizes no network connections, email sends, implementation, commits, or pushes.
+> This specification originated as a planning proposal. That planning-only
+> status is historical and is superseded by the implementation and evidence
+> recorded in [quickstart.md](quickstart.md). External email delivery and
+> deployment are not claimed.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -52,7 +57,7 @@ An existing customer can understand whether verification applies to their accoun
 **Acceptance Scenarios**:
 
 1. **US3-A1 — Transition policy**: **Given** an existing customer, staff member, or superuser, **When** verification is introduced and login is attempted, **Then** the account is exempt from the new verification requirement, existing sessions retain their current behavior, disabled accounts remain disabled, and no account is silently marked as having proved mailbox ownership.
-2. **US3-A2 — No scope expansion**: **Given** the proposed registration/login journey, **When** a visitor follows its available actions, **Then** login remains email/password only, there is no Google sign-in option, and verification never behaves as password reset or passwordless login.
+2. **US3-A2 — No scope expansion**: **Given** the specified registration/login journey, **When** a visitor follows its available actions, **Then** login remains email/password only, there is no Google sign-in option, and verification never behaves as password reset or passwordless login.
 
 ### Edge Cases
 
@@ -86,8 +91,8 @@ An existing customer can understand whether verification applies to their accoun
 - **FR-012**: Existing accounts MUST be exempt from the new verification requirement without being represented as having proved mailbox ownership. Existing access and session behavior MUST be preserved for customers, staff, and superusers; disabled accounts MUST remain disabled. Verification is required only for accounts registered after this feature takes effect.
 - **FR-013**: Each token MUST expire exactly one hour (3,600 seconds) after issuance, use one authoritative deadline, and reject confirmation at or after expiry.
 - **FR-014**: All future changed service interfaces MUST be defined and validated in their owning canonical contracts before corresponding behavior is implemented. Feature-local proposals MUST be labeled non-authoritative; see Contract Requirements below.
-- **FR-015**: Google login MUST be excluded from this proposed CU-C01 scope; email/password login MUST remain. Password reset/change, magic-link login, email-address change, and unrelated session/role redesign MUST NOT be added.
-- **FR-016**: Local verification MUST use captured messages and simulated delivery failures without external connections. A future, separately authorized Gmail SMTP demo may submit approximately ten real verification emails; configuring or sending them is outside this authoring run and MUST NOT become a prerequisite for local validation.
+- **FR-015**: Google login MUST be excluded from this specified CU-C01 scope; email/password login MUST remain. Password reset/change, magic-link login, email-address change, and unrelated session/role redesign MUST NOT be added.
+- **FR-016**: Local verification MUST use captured messages and simulated delivery failures without external connections. Any Gmail SMTP demo or external email send requires separate authorization and MUST NOT become a prerequisite for local validation.
 
 ### Key Entities
 
@@ -96,7 +101,7 @@ An existing customer can understand whether verification applies to their accoun
 - **Delivery attempt**: A submission outcome sufficient to support sanitized recovery and local evidence, without retaining credentials or raw tokens in operational records.
 - **Abuse-limit state**: Recipient and caller allowances over approved time windows; independent of browser reloads and not a public account lookup.
 
-### Contract Requirements — proposal, not canonical definitions
+### Contract Requirements — feature-level planning summary, not canonical definitions
 
 The canonical sources remain [Core SDL](../../bgg-shop-core/specs/schema.graphql) and [BFF OpenAPI](../../bgg-shop-bff/specs/openapi.yaml). Existing operations include Core `register`/`login` and BFF `POST /api/v1/auth/register` and `POST /api/v1/auth/login`; neither source currently defines this verification flow. No operation names, new paths, status codes, or payload fields for verification are approved by this spec.
 
@@ -124,7 +129,10 @@ Feature-local drafts were promoted into the canonical service contracts and remo
 - **SC-006**: Every local delivery-failure case leaves the account pending and recoverable, with zero exposed raw tokens, passwords, SMTP credentials, or provider diagnostics in inspected non-email responses and operational records.
 - **SC-007**: Every existing-account class passes its local access-preservation test, no exempt account is falsely marked verified, and no separate administrative restriction is removed by verification.
 
-These are future acceptance targets, not observed test results. The ten-message local capture target does not authorize ten external sends.
+These criteria were authored as acceptance targets. Recorded checks cover only
+the cases described in [quickstart.md](quickstart.md); they do not imply that
+every success criterion has been demonstrated. The ten-message local capture
+target does not authorize external sends.
 
 ## Assumptions
 
@@ -145,10 +153,10 @@ These are future acceptance targets, not observed test results. The ten-message 
 
 All three product decisions are approved by the user. Contract-first planning must still resolve exact operation shapes, public error mappings, trusted caller identity, and compatibility details before implementation; this specification does not approve unspecified interface definitions.
 
-### Current evidence and narrowly proposed CU-C01 alignment
+### Historical baseline notes and CU-C01 alignment
 
-- [Authentication as-built spec](../001-authentication-as-built/spec.md) and [CU-C01 authentication notes](../../docs/CU-C01-AUTHENTICATION-CHANGES.md) explicitly exclude email confirmation and social login. Registration currently directs users to login without automatic sign-in. These documents remain historical/current-baseline evidence, not proof of this proposal.
-- [CasosDeUso.md, CU-C01](../../CasosDeUso.md) still describes Google and immediate session creation during registration. The proposed replacement removes its Google alternative and separates registration → pending verification → confirmation → password login. It does not claim that replacement is implemented. That file is unchanged because it is outside the allowed edit surface.
+- [Authentication as-built spec](../001-authentication-as-built/spec.md) and [CU-C01 authentication notes](../../docs/CU-C01-AUTHENTICATION-CHANGES.md) describe the baseline recorded when this feature was specified. They are historical context, not current implementation evidence.
+- [CasosDeUso.md, CU-C01](../../CasosDeUso.md) remains unchanged and is outside this edit scope; it is not the status source for this implementation.
 - The current canonical Core SDL includes user activation, registration, login, and authentication credentials; the BFF contract includes existing registration, login, refresh, and logout. Historical authentication notes are not a substitute for these canonical interfaces.
 - [Moderation plan](../011-moderate-content-reviews/plan.md) establishes the repository's distinction between feature-local drafts and owning service contracts; this proposal preserves that distinction.
 - [.agents/ponytail.md](../../.agents/ponytail.md) was read: keep the feature minimal without weakening validation, error handling, or security. No new framework, queue, provider abstraction, or dependency is selected here.
@@ -165,10 +173,22 @@ All three product decisions are approved by the user. Contract-first planning mu
 | FR-006, FR-007, FR-008 | US2-A2, US2-A3, US2-A4; resend race; Q3 | SC-004 |
 | FR-010, FR-011 | US2-A1, US2-A5; leakage and redirect edge cases | SC-006 |
 | FR-012 | US3-A1; Q1 policy table | SC-007 |
-| FR-014 | Contract Requirements 1–7; future owning-contract validation and cross-boundary acceptance cases | SC-001 through SC-004, SC-006 |
+| FR-014 | Contract Requirements 1–7; owning-contract structural checks and recorded cross-boundary tests in [quickstart.md](quickstart.md) | SC-001 through SC-004, SC-006 |
 | FR-015 | US3-A2; review of proposed journey actions | SC-002 |
 | FR-016 | US1/US2 local captured-message and failure tests; authorization boundary review | SC-002, SC-006 |
 
-### Authoring verification boundary
+### Current implementation and verification boundary
 
-Only documentation readback, requirement traceability, marker counts, local link checks, whitespace checks, and Git branch/status inspection are applicable now. No functional, browser, contract-schema, SMTP, or delivery test has run for this proposed feature. The checklist records remaining readiness failures rather than marking unresolved policy as passed.
+The implementation and repository-recorded local checks are summarized in
+[quickstart.md](quickstart.md), including exact Core, BFF, and Frontend
+commands, prior failures, subsequent passing results, and remaining limits.
+Relevant implementation and test paths include
+`../../bgg-shop-core/saleor/email_verification.py`,
+`../../bgg-shop-core/tests/test_email_verification.py`,
+`../../bgg-shop-core/tests/test_email_verification_postgres.py`,
+`../../bgg-shop-bff/tests/test_email_verification.py`,
+`../../bgg-shop-bff/tests/test_services_email_verification_contract.py`,
+`../../bgg-shop-frontend/src/auth/EmailVerificationScreen.tsx` and its
+`EmailVerificationScreen.test.tsx`. Local evidence does not establish
+deployment, Mailpit/Gmail connectivity, external delivery, or SC-005
+participant-study results.

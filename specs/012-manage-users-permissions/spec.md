@@ -2,7 +2,10 @@
 
 **Feature Branch**: `012-manage-users-permissions`
 **Created**: 2026-11-06
-**Status**: Decisions, plan and contracts approved; implementation in progress
+**Status**: Implementation and repository-recorded local checks are complete
+per [tasks.md](tasks.md). The additional privilege grant/revoke smoke test is
+owner-reported on 2026-11-10; no command or log for that smoke test is recorded.
+T013's unrelated broader Core failures remain documented in the task ledger.
 **Input**: CU-A04, “Administrar Usuarios y Permisos”: an active Superadmin manages the staff and superuser privileges of existing users so operational access follows the approved authority rules.
 
 ## User Scenarios & Testing *(mandatory)*

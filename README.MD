@@ -186,6 +186,8 @@ Estado y alcance: [`specs/013-add-chatbot/spec.md`](specs/013-add-chatbot/spec.m
 [`bgg-shop-frontend/src/chatbot/`](bgg-shop-frontend/src/chatbot/).
 Las pruebas enfocadas y sus límites están registrados en
 [`specs/013-add-chatbot/tasks.md`](specs/013-add-chatbot/tasks.md).
+La reconstrucción del proceso de AI Engineering está en
+[`docs/AI-Engineering-Bitacora.md`](docs/AI-Engineering-Bitacora.md).
 
 ## Inicio local con Podman Compose
 

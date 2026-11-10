@@ -1,0 +1,176 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-10-26T11:05:00.000Z",
+  "__export_source": "insomnia.desktop.app:2026.10",
+  "resources": [
+    {
+      "_id": "wrk_bgg_both",
+      "_type": "workspace",
+      "name": "bgg-shop BFF + Core - Smoke Tests",
+      "description": "Workspace combining BFF REST endpoints and Core internal endpoints for OpKeys and GraphQL tests"
+    },
+    {
+      "_id": "env_base",
+      "_type": "environment",
+      "parentId": "wrk_bgg_both",
+      "name": "Base Environment",
+      "data": {
+        "protocol": "http",
+        "host": "localhost",
+        "bff_port": "5000",
+        "core_port": "8000",
+        "op_key": "wEGFzereE9ihVH_QDy9w2UUPAFWD2WkByvCWKogy0fM",
+        "admin_token": "Bearer eyJhbGciOi...",
+        "internal_secret": "changeme-internal-secret"
+      }
+    },
+    {
+      "_id": "req_bff_imported_openapi",
+      "_type": "request_group",
+      "parentId": "wrk_bgg_both",
+      "name": "BFF (from openapi)"
+    },
+    {
+      "_id": "req_create_product_opkey",
+      "_type": "request",
+      "parentId": "wrk_bgg_both",
+      "name": "BFF: Create Product - X-Op-Key",
+      "method": "POST",
+      "url": "{{ protocol }}://{{ host }}:{{ bff_port }}/api/v1/admin/products",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\"name\":\"Insomnia OpKey Product\",\"price\":9.99,\"quantity\":1}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "X-Op-Key", "value": "{{ op_key }}" }
+      ]
+    },
+    {
+      "_id": "req_create_product_bearer",
+      "_type": "request",
+      "parentId": "wrk_bgg_both",
+      "name": "BFF: Create Product - Bearer",
+      "method": "POST",
+      "url": "{{ protocol }}://{{ host }}:{{ bff_port }}/api/v1/admin/products",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\"name\":\"Insomnia Bearer Product\",\"price\":7.5,\"quantity\":2}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "{{ admin_token }}" }
+      ]
+    },
+    {
+      "_id": "req_bff_login",
+      "_type": "request",
+      "parentId": "wrk_bgg_both",
+      "name": "BFF: Login",
+      "method": "POST",
+      "url": "{{ protocol }}://{{ host }}:{{ bff_port }}/api/v1/auth/login",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\"email\":\"admin@example.com\",\"password\":\"adminpass\"}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ]
+    },
+
+    {
+      "_id": "grp_core_internal",
+      "_type": "request_group",
+      "parentId": "wrk_bgg_both",
+      "name": "Core - Internal & GraphQL"
+    },
+    {
+      "_id": "req_core_graphql_me",
+      "_type": "request",
+      "parentId": "grp_core_internal",
+      "name": "Core: GraphQL - me",
+      "method": "POST",
+      "url": "{{ protocol }}://{{ host }}:{{ core_port }}/graphql/",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\"query\":\"query { me { id email firstName lastName isStaff } }\"}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ]
+    },
+    {
+      "_id": "req_core_refresh",
+      "_type": "request",
+      "parentId": "grp_core_internal",
+      "name": "Core: Auth Refresh",
+      "method": "POST",
+      "url": "{{ protocol }}://{{ host }}:{{ core_port }}/api/v1/auth/refresh",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\"refresh_token\":\"<refresh_token>\"}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ]
+    },
+    {
+      "_id": "req_core_op_create",
+      "_type": "request",
+      "parentId": "grp_core_internal",
+      "name": "Core: Op-Create",
+      "method": "POST",
+      "url": "{{ protocol }}://{{ host }}:{{ core_port }}/internal/op-create",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\"ops\":[\"POST:/api/v1/admin/*\"],\"user_id\":1}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "X-Internal-Secret", "value": "{{ internal_secret }}" }
+      ]
+    },
+    {
+      "_id": "req_core_op_validate",
+      "_type": "request",
+      "parentId": "grp_core_internal",
+      "name": "Core: Op-Validate",
+      "method": "POST",
+      "url": "{{ protocol }}://{{ host }}:{{ core_port }}/internal/op-validate",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\"op_key\":\"{{ op_key }}\",\"path\":\"/api/v1/admin/products\",\"method\":\"POST\"}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "X-Internal-Secret", "value": "{{ internal_secret }}" }
+      ]
+    },
+    {
+      "_id": "req_core_op_revoke",
+      "_type": "request",
+      "parentId": "grp_core_internal",
+      "name": "Core: Op-Revoke",
+      "method": "POST",
+      "url": "{{ protocol }}://{{ host }}:{{ core_port }}/internal/op-revoke",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\"op_key\":\"{{ op_key }}\"}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "X-Internal-Secret", "value": "{{ internal_secret }}" }
+      ]
+    },
+    {
+      "_id": "req_core_invoice",
+      "_type": "request",
+      "parentId": "grp_core_internal",
+      "name": "Core: Invoice PDF",
+      "method": "GET",
+      "url": "{{ protocol }}://{{ host }}:{{ core_port }}/invoices/{order_id}/",
+      "headers": []
+    }
+  ]
+}

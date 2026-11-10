@@ -1,0 +1,43 @@
+{
+  "request": {
+    "url": "http://localhost:8000/graphql/",
+    "headers": {
+      "Authorization": "Bearer eyJhbGciOiJI..."
+    },
+    "variables": {
+      "input": {
+        "name": "Test Product Manual 1793062258646",
+        "bggId": 9546,
+        "price": 19.99,
+        "quantity": 5,
+        "releaseYear": 1994,
+        "minPlayers": 1,
+        "maxPlayers": 6,
+        "playingTimeMinutes": 60,
+        "minAge": 14,
+        "maxAge": 99,
+        "weight": 2.98,
+        "category": [
+          "Juegos de Estrategia"
+        ],
+        "publisher": "Maldito Games",
+        "imageFileName": "/media/portadas/2860960.webp",
+        "imageUrl": "2860960.webp"
+      }
+    }
+  },
+  "response": {
+    "data": {
+      "createProduct": {
+        "product": null,
+        "userErrors": [
+          {
+            "field": null,
+            "code": "SERVER_ERROR",
+            "message": "Create product failed"
+          }
+        ]
+      }
+    }
+  }
+}

@@ -2,7 +2,11 @@
 
 **Feature Branch**: `013-add-chatbot`
 **Created**: 2026-11-06
-**Status**: Product and security decisions approved; canonical contracts validated; runtime implementation partially complete; full local acceptance pending
+**Status**: Runtime implementation complete; local acceptance is owner-reported
+as passed on 2026-11-10. The new run's commands/results are not recorded:
+SC-001 and SC-007 remain unexecuted in the repository evidence, and live
+OpenRouter authentication remains untested. See [tasks.md](tasks.md) and
+[quickstart.md](quickstart.md) for the recorded evidence and limitations.
 **Input**: Approved CU-C07 decisions for an in-application buyer FAQ and product-help chatbot.
 
 ## Clarifications

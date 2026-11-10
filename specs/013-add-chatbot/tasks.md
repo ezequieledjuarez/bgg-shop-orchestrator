@@ -1,7 +1,22 @@
 # Tasks: Buyer-Facing Store Chatbot
 
 **Feature**: `specs/013-add-chatbot/spec.md` on branch `013-add-chatbot`
-**Current status (2026-11-07)**: T030 and T032 are administratively closed at the user's request; their validation gaps are waived for task bookkeeping only, not verified or accepted. SC-001 and SC-007 were not run, and live OpenRouter authentication was not performed. See [Administrative task closure](#administrative-task-closure-2026-11-07) for remaining optional evidence follow-ups and exact traceability. **This is not a full acceptance or security-verification claim.**
+**Current status (updated 2026-11-10)**: The owner reports local acceptance passed on 2026-11-10. The new run's commands/results are not recorded, so this is owner-reported acceptance, not independently evidenced verification. The 2026-11-07 record remains: T030 and T032 were administratively closed at the user's request; SC-001 and SC-007 were not run, and live OpenRouter authentication was not performed. No criterion-level result is supplied for those gaps. See [Owner-reported acceptance update](#owner-reported-acceptance-update-2026-11-10) and [Administrative task closure](#administrative-task-closure-2026-11-07). **Do not treat this update as a full security-verification claim.**
+
+## Owner-reported acceptance update (2026-11-10)
+
+The owner reports that local acceptance passed. The new run's commands,
+results, and criterion-level coverage were not supplied or recorded. Therefore
+this update does not independently verify the acceptance run or establish that
+SC-001 or SC-007 was executed. The repository's 2026-11-07 record that those
+criteria were not run and that live OpenRouter authentication was not tested
+remains visible and unmodified.
+
+Feature traceability: requirements are in
+[`specs/013-add-chatbot/spec.md`](spec.md); repository implementation and test
+references are recorded under the task entries below and in
+[`quickstart.md`](quickstart.md). Those earlier references are not represented
+as evidence for the unrecorded 2026-11-10 run.
 
 **Verified evidence**: Foundational security/contract gate T001–T006 and Core foundation T007–T008 are complete. T013 guardrail/privacy, T019 focused catalog BFF tests, T014 deterministic Chroma regression, T015 scoped local provider/RAG behavior, and T031's ten focused English/Spanish cases are verified. The exact T031 command passed **117 tests, 181 warnings in 3.01s**; independent review reran it with **117 passed, 181 warnings in 2.99s**. Direct BFF FAQ paths also exercised real Ollama embeddings and grounded answers, not model-backed guardrail/catalog acceptance. The corrected isolated BFF/Core HTTP proof below verifies catalog/record operations, ownership/expiry, and one-shot retention cleanup. Root `.env` is not loaded by `app.py`; direct launchers must pass required settings in their process environment. All failed, skipped, or unavailable checks and the approved cookie-only session/per-request Core identity behavior are recorded below and in [quickstart.md](quickstart.md).
 **Scope**: Local-only. Do not use CI, remote network validation, staging, production, deployment, real personal/order data, or non-disposable databases. Do not edit `.specify/feature.json` or any other feature. The prerequisites script points to Feature 011 because of stale metadata; Feature 013's `spec.md` is the source of truth here.

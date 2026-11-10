@@ -1,5 +1,11 @@
 # Feature 013: safe local verification record
 
+> **Owner-reported acceptance (2026-11-10):** The owner reports local
+> acceptance passed. The new run's commands and results were not supplied or
+> recorded. This report does not identify which acceptance criteria were run;
+> the existing SC-001/SC-007 and live OpenRouter-authentication gaps below
+> remain unreconciled by repository-recorded evidence.
+
 > **Administrative status (2026-11-07):** T030/T032 are closed at the user's request; validation gaps were waived for task closure only. This is not a verified acceptance report. SC-001 and SC-007 were not executed, live OpenRouter authentication was not tested, and the unrelated BFF contract result remains unresolved (**7 passed, 9 failed**). Any further evidence collection is optional and does not block the administrative closure; see [tasks.md](tasks.md#administrative-task-closure-2026-11-07).
 
 This is a record of locally observed commands and their limits, not a clean acceptance report. Run commands only from the repository root and only against local fixtures. Do not use CI, staging, production, remote services, real personal/order data, or a non-disposable database. Do not print or copy environment secrets. Do not install dependencies or contact package registries.

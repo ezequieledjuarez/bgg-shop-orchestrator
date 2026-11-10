@@ -1,9 +1,23 @@
 # Tasks: Manage Users and Permissions (CU-A04)
 
 **Input**: [spec.md](spec.md), [requirements checklist](checklists/requirements.md)
-**Status**: T004–T021 are complete, including local PostgreSQL GREEN verification, test-first evidence, independent BFF authorization verification, the full frontend suite/build, and nine isolated local Chromium scenarios. T013's broader Core checks had three unrelated existing failures, which are recorded.
+**Status**: T004–T021 are complete, including local PostgreSQL GREEN verification, test-first evidence, independent BFF authorization verification, the full frontend suite/build, and nine isolated local Chromium scenarios. The owner additionally reports testing privilege grants and revocations on 2026-11-10; no command or log was supplied or recorded for that smoke test. T013's broader Core checks had three unrelated existing failures, which are recorded.
 **Branch**: `012-manage-users-permissions` in the orchestrator and all three service repositories.
 **Scope**: Local environments and disposable test data only. No staging, production, CI, remote validation, or real personal data.
+
+## Owner-reported privilege smoke test (2026-11-10)
+
+The owner reports testing privilege grants and revocations. No command, log,
+or test result was supplied for this smoke test, so it is not independently
+verified and does not replace the repository-recorded T004–T021 evidence or
+erase T013's three unrelated broader Core failures.
+
+Related implementation and recorded test paths: `bgg-shop-bff/src/controllers/admin_users_controller.py`,
+`bgg-shop-bff/tests/test_admin_users.py`,
+`bgg-shop-core/tests/test_user_permissions_postgres.py`, and
+`bgg-shop-frontend/src/admin/users/UserManagementPanel.test.tsx`. These paths
+identify the existing feature surface; they are not claimed as the command or
+specific tests used in the owner-reported smoke test.
 
 ## Delivery strategy
 

@@ -24,7 +24,11 @@ These imports do not import application settings or initialize Django/BFF. Valid
 
 The feature directory is untracked at authoring time; `git diff --check` alone does not inspect it. Also run `git diff --no-index --check -- /dev/null <absolute-planning-file>` for each generated file. Exit status 1 from an actual diff is not by itself a whitespace failure; inspect diagnostics. Do not stage anything merely to inspect the diff.
 
-## Future contract-first prerequisites (NOT run)
+## Historical planning checklist — future contract-first prerequisites
+
+This section records the pre-implementation plan only. Its future-tense
+statements are not current implementation status; see **Scoped correction
+verification** below for observed implementation checks and remaining limits.
 
 1. Approve proposals and update the two owning canonical contracts, then validate full OpenAPI/SDL, BFF GraphQL request documents, error/status/header mappings and generated types. Existing installed `graphql-core`/OpenAPI tooling is sufficient for structural checks; no dependency install needed.
 2. Run `npm --prefix /home/eze/develop/boardgame-app/bgg-shop-frontend run generate:types` from the canonical OpenAPI only. Compile/typecheck consumers; never edit generated definitions manually.
@@ -63,7 +67,7 @@ Construct auth tables with real Django schema/migrations, not `auth_user(id)` sk
 
 Migration test coverage: legacy backfill customers/staff/superusers/disabled, unchanged role/password/activation/session records, null historic verified_at, registration cutover, rollback safety, real PK/FK/length/index metadata, and failure rollback. Concurrency must use independent PostgreSQL connections and barriers with bounded timeouts. SQLite or mocked transactions cannot prove single-use/replacement/window correctness.
 
-## Future local acceptance walkthrough
+## Historical planning target: local acceptance walkthrough
 
 1. Use fake/locmem captured messages for ten fresh registrations; record counts, not raw proofs. Each gets pending instructions; zero credentials/session/cookies and zero cart merges before verification.
 2. Open link GET/HEAD/preview; assert no POST, account mutation or proof consumption. Capture fragment and replace browser history before telemetry; no token in persistent storage/referrers/logs. Explicit button POST verifies once, does not login; then password login works.
@@ -84,7 +88,10 @@ Optional later Mailpit validation needs separately approved isolated local liste
 - All seven generated files were read back; 29 relative Markdown links resolved, and 16 functional requirements / seven success criteria / 18 contract cases were traced. Every documented response resolved to a no-store header.
 - `git diff --check` and per-file no-index whitespace checks passed after correcting Markdown trailing spaces. Example validation also caught and corrected a YAML flow-mapping comma in the neutral resend example.
 - Final status retained the same pre-existing dirty/untracked root surfaces, plus planning files inside feature 016. Core remained clean and BFF retained its pre-existing untracked `.pytest-tmp/`. No selector, canonical contract, service code or agent-context file was edited.
-- No feature runtime, migration, browser, SMTP, Mailpit or real-delivery outcome is claimed. Checklist runtime acceptance remains pending.
+- The initial authoring checks above did not claim runtime, migration, browser,
+  SMTP, Mailpit or real-delivery outcomes. Those historical statements are
+  superseded where scoped results are recorded below; deployment, external
+  delivery and SC-005 participant-study results remain unclaimed.
 
 ## Scoped correction verification
 

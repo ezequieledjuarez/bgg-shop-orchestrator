@@ -12,6 +12,17 @@ Tema: E-commerce Juegos de mesa.
 
 - API: GraphQL (para consultar Saleor) + REST (para los endpoints en Flask)
 
+## Repositorios
+
+- [Orquestador](https://github.com/ezequieledjuarez/bgg-shop-orchestrator)
+- [Frontend](https://github.com/ezequieledjuarez/bgg-shop-frontend)
+- [BFF](https://github.com/ezequieledjuarez/bgg-shop-bff)
+- [Core](https://github.com/ezequieledjuarez/bgg-shop-core)
+
+
+## Video
+https://drive.google.com/drive/u/2/folders/1Qf6lsoiXcs7LKUy9XbbTWGTJI2OEYtT3?q=sharedwith:public%20parent:1Qf6lsoiXcs7LKUy9XbbTWGTJI2OEYtT3
+
 ## Integrantes:
 
 - Nombre: Ezequiel Eduardo Juarez
@@ -19,13 +30,6 @@ Tema: E-commerce Juegos de mesa.
 - Mail: ezequieledjuarez@gmail.com
 
 - Usuario de github: ezequieledjuarez
-
-- Nombre: Nahuel Martín Sosa
-
-- Mail: nahuelmartin.sosa@gmail.com
-
-- Usuario de github: NahueSosa
-
 
 ## 1. Actores del Sistema
 

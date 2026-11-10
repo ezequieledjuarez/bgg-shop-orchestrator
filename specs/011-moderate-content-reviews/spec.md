@@ -2,7 +2,9 @@
 
 **Feature Branch**: `011-moderate-content-reviews`
 **Created**: 2026-11-05
-**Status**: Draft
+**Status**: Implementation complete. Local verification is repository-recorded
+in [tasks.md](tasks.md) and [quickstart.md](quickstart.md); retain the recorded
+exceptions and known unrelated baseline failure there.
 **Input**: CU-A03, “Moderar Contenido y Reseñas”: allow an Administrator / Seller to review, approve, hide, or delete community comments and ratings, updating public game-page visibility and product rating averages.
 
 ## User Scenarios & Testing *(mandatory)*

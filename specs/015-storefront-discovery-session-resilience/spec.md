@@ -2,7 +2,10 @@
 
 **Feature Branch**: `015-storefront-discovery-session-resilience`
 **Created**: 2026-11-09
-**Status**: Draft
+**Status**: Implementation complete. Local checks and remaining exceptions are
+recorded in [tasks.md](tasks.md) and [quickstart.md](quickstart.md); the
+unrelated Core/BFF baseline failures and the limitation that the original
+browser incident was not reproduced remain part of that evidence.
 **Input**: User-reported storefront navigation and order-history failures, plus uncertainty about an expired administrator session.
 
 ## Clarifications
