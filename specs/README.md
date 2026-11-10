@@ -18,13 +18,19 @@ work. The service repositories' matching `spec.md` files for features 001–006
 are pointer pages to these canonical definitions, not alternate feature
 requirements.
 
-## Service-owned evidence and contracts
+## Service feature directories, evidence, and contracts
 
-Core, BFF, and Frontend retain their feature-local `plan.md` and `tasks.md` as
-layer-specific design and execution evidence. Authoritative service contracts,
-including the Core GraphQL schema and BFF OpenAPI document, remain in their
-owning service repositories under `specs/`.
+Core, BFF, and Frontend group service-owned materials in
+`specs/<feature>/`. These files record layer-specific design, implementation,
+and verification evidence; they do not replace the canonical cross-service
+product spec. CU-A01's older requirement task ledgers are named
+`006-manage-catalog-inventory/legacy-requirements-tasks.md`, separately from
+the current CU-A01 implementation artifacts under
+`007-manage-catalog-inventory/`. CU-A02 service ledgers live at
+`010-sales-metrics-reports/tasks.md`. Service-only notes, such as Core's
+operations-and-keys notes, are grouped with their related feature materials
+without becoming cross-service requirements.
 
-Service-only engineering notes may remain in their existing flat locations.
-Moving those notes is a separate link-aware migration; their presence does not
-make them competing cross-service feature specifications.
+Authoritative contracts remain in their owning service repositories and stay
+flat under `specs/`: Core's `schema.graphql` and BFF's `openapi.yaml`. Feature
+grouping does not relocate or duplicate either contract.

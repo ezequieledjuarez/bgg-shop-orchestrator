@@ -109,7 +109,7 @@ Engram mirror was pending when these tasks were originally recorded.
   `tests/test_opkeys_internal.py::test_admin_operation_requires_active_administrator`
   passed three cases. These focused tests do not prove authorization or
   propagation for every 007 operation; see the BFF task record for commands.
-- See `bgg-shop-bff/specs/007-manage-catalog-inventory-tasks.md` for observed
+- See `bgg-shop-bff/specs/007-manage-catalog-inventory/bff-tasks.md` for observed
   BFF/Core/Frontend discrepancies. T001-T003 there remain open because the full
   inventory, decisions, and approved contract are not complete.
 
@@ -171,7 +171,7 @@ complete; T006 remains open for runtime conformance.
   the initial migration use `SERIAL`/`AutoField`. Model alignment requires
   approval for `bgg-shop-core/saleor/promotions/models.py`; C-1 is partial.
 - At that earlier snapshot, the separate
-  `bgg-shop-frontend/specs/006-manage-catalog-inventory-tasks.md` contained
+  `bgg-shop-frontend/specs/006-manage-catalog-inventory/legacy-requirements-tasks.md` contained
   image-upload and unresolved-reduction wording. It was not edited because it
   is outside the authorized surfaces; current approved decisions are recorded
   in this recovery record and Spec 007 docs.
