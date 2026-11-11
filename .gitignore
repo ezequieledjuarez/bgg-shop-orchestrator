@@ -5,5 +5,7 @@
 !.env.template
 /bgg-shop-core
 /bgg-shop-bff
-/bgg-shopfrontend
+/bgg-shop-frontend
 /.local/
+/tests/e2e/initSession.js
+/tests/e2e/storageState.json
